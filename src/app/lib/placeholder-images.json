@@ -1,0 +1,35 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "rapper-1",
+      "description": "Aggressive rap artist performing on stage",
+      "imageUrl": "https://picsum.photos/seed/rap1/400/400",
+      "imageHint": "rapper performance"
+    },
+    {
+      "id": "battle-1",
+      "description": "Two rappers facing off in a dark gritty club",
+      "imageUrl": "https://picsum.photos/seed/battle1/800/450",
+      "imageHint": "rap battle"
+    },
+    {
+      "id": "league-1",
+      "description": "Crowd cheering at a hip hop event",
+      "imageUrl": "https://picsum.photos/seed/crowd1/600/400",
+      "imageHint": "hip hop crowd"
+    },
+    {
+      "id": "rapper-2",
+      "description": "Rapper with a microphone in a spotlight",
+      "imageUrl": "https://picsum.photos/seed/rap2/400/400",
+      "imageHint": "rapper microphone"
+    },
+    {
+      "id": "battle-2",
+      "description": "Dramatic rap battle showdown",
+      "imageUrl": "https://picsum.photos/seed/battle2/800/450",
+      "imageHint": "rap battle stage"
+    }
+  ]
+}
