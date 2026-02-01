@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { SearchControls } from "@/components/search-controls"
 import { PunchlineCard } from "@/components/punchline-card"
 import { VideoModal } from "@/components/video-modal"
+import { CorrectionModal } from "@/components/correction-modal"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
 import { Flame, Search } from "lucide-react"
@@ -12,6 +13,7 @@ type ResultTab = 'all' | 'semantic' | 'exact'
 
 export default function RapBattleApp() {
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
+  const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<ResultTab>('all')
   const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
@@ -189,6 +191,7 @@ export default function RapBattleApp() {
                     searchQuery={currentQuery}
                     onPlayVideo={setSelectedVideo}
                     onRapperClick={(rapperName) => setSelectedRapper(rapperName)}
+                    onCorrection={(result) => setCorrectionResult(result)}
                   />
                 ))}
               </div>
@@ -223,7 +226,16 @@ export default function RapBattleApp() {
         BattleLines AI • Semantic Neural Punchline Search
       </footer>
 
-      <VideoModal result={selectedVideo} searchQuery={currentQuery} onClose={() => setSelectedVideo(null)} />
+      <VideoModal
+        result={selectedVideo}
+        searchQuery={currentQuery}
+        onClose={() => setSelectedVideo(null)}
+        onCorrection={(result) => {
+          setSelectedVideo(null)
+          setCorrectionResult(result)
+        }}
+      />
+      <CorrectionModal result={correctionResult} onClose={() => setCorrectionResult(null)} />
     </div>
   )
 }

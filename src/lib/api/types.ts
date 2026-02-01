@@ -43,3 +43,14 @@ export class ApiError extends Error {
     this.name = 'ApiError'
   }
 }
+
+// Corrections API Types
+export interface CorrectionSubmitRequest {
+  transcript_id: number
+  suggested_content: string
+}
+
+export interface CorrectionSubmitResponse {
+  id: number
+  message: string
+}

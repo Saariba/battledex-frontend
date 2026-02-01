@@ -15,9 +15,10 @@
 5. [Battles API](#5-battles-api)
 6. [Rappers API](#6-rappers-api)
 7. [Transcripts API](#7-transcripts-api)
-8. [Error Handling](#8-error-handling)
-9. [TypeScript Types](#9-typescript-types)
-10. [Code Examples](#10-code-examples)
+8. [Corrections API](#8-corrections-api)
+9. [Error Handling](#9-error-handling)
+10. [TypeScript Types](#10-typescript-types)
+11. [Code Examples](#11-code-examples)
 
 ---
 
@@ -65,6 +66,10 @@ The API allows all origins (`*`) for development. All standard HTTP methods and 
 | `GET` | `/api/v1/battles` | List all battles |
 | `GET` | `/api/v1/rappers` | List all rappers |
 | `GET` | `/api/v1/battles/{id}/transcripts` | Get battle transcript |
+| `POST` | `/api/v1/corrections` | Submit a lyric correction |
+| `GET` | `/api/v1/corrections` | List corrections (admin) |
+| `GET` | `/api/v1/corrections/{id}` | Get correction with context |
+| `POST` | `/api/v1/corrections/{id}/review` | Approve/reject correction (admin) |
 
 ---
 
@@ -354,7 +359,196 @@ GET /api/v1/battles/550e8400-e29b-41d4-a716-446655440000/transcripts
 
 ---
 
-## 8. Error Handling
+## 8. Corrections API
+
+The corrections system allows users to submit corrections for transcribed lyrics. Corrections are stored for admin review before being applied to the database.
+
+### Workflow
+
+1. User submits correction via `POST /api/v1/corrections`
+2. Correction is stored with status `pending`
+3. Admin reviews via `GET /api/v1/corrections` and `GET /api/v1/corrections/{id}`
+4. Admin approves/rejects via `POST /api/v1/corrections/{id}/review`
+5. If approved, the transcript is updated automatically
+
+---
+
+### `POST /api/v1/corrections`
+
+Submit a correction for a transcript line.
+
+#### Request
+
+```http
+POST /api/v1/corrections
+Content-Type: application/json
+```
+
+```json
+{
+  "transcript_id": 123,
+  "suggested_content": "Corrected lyric text here"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `transcript_id` | integer | Yes | ID of the transcript line (from `/api/v1/battles/{id}/transcripts`) |
+| `suggested_content` | string | Yes | The suggested corrected text |
+
+#### Response
+
+```json
+{
+  "id": 1,
+  "message": "Correction submitted successfully. It will be reviewed by an admin."
+}
+```
+
+#### Errors
+
+| Code | When |
+|------|------|
+| 404 | Transcript ID not found |
+
+---
+
+### `GET /api/v1/corrections`
+
+List corrections filtered by status (admin endpoint).
+
+#### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | `pending` | Filter: `pending`, `approved`, or `rejected` |
+| `limit` | integer | `50` | Max results |
+
+#### Example Request
+
+```http
+GET /api/v1/corrections?status=pending&limit=20
+```
+
+#### Response
+
+```json
+{
+  "corrections": [
+    {
+      "id": 1,
+      "transcript_id": 123,
+      "original_content": "Original lyric text",
+      "suggested_content": "Corrected lyric text",
+      "status": "pending",
+      "created_at": "2025-01-31T12:00:00Z",
+      "reviewed_at": null,
+      "reviewer_notes": null
+    }
+  ],
+  "count": 5,
+  "status": "pending"
+}
+```
+
+---
+
+### `GET /api/v1/corrections/{correction_id}`
+
+Get a single correction with surrounding transcript context for review.
+
+#### Response
+
+```json
+{
+  "id": 1,
+  "transcript_id": 123,
+  "original_content": "Original lyric text",
+  "suggested_content": "Corrected lyric text",
+  "status": "pending",
+  "created_at": "2025-01-31T12:00:00Z",
+  "reviewed_at": null,
+  "reviewer_notes": null,
+  "context_before": [
+    {
+      "id": 121,
+      "content": "Previous line 1",
+      "sequence_index": 50,
+      "speaker_label": "Meidi"
+    },
+    {
+      "id": 122,
+      "content": "Previous line 2",
+      "sequence_index": 51,
+      "speaker_label": "Meidi"
+    }
+  ],
+  "context_after": [
+    {
+      "id": 124,
+      "content": "Next line 1",
+      "sequence_index": 53,
+      "speaker_label": "Meidi"
+    }
+  ],
+  "battle_title": "Meidi vs Robscure (DLTLLY)",
+  "video_url": "https://www.youtube.com/watch?v=..."
+}
+```
+
+#### Errors
+
+| Code | When |
+|------|------|
+| 404 | Correction not found |
+
+---
+
+### `POST /api/v1/corrections/{correction_id}/review`
+
+Approve or reject a correction (admin endpoint).
+
+When approved, the transcript is updated with the suggested content.
+
+#### Request
+
+```http
+POST /api/v1/corrections/1/review
+Content-Type: application/json
+```
+
+```json
+{
+  "action": "approve",
+  "reviewer_notes": "Verified against video"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `action` | string | Yes | `approve` or `reject` |
+| `reviewer_notes` | string | No | Optional notes about the decision |
+
+#### Response
+
+```json
+{
+  "success": true,
+  "message": "Correction approved successfully",
+  "correction_id": 1,
+  "action": "approve"
+}
+```
+
+#### Errors
+
+| Code | When |
+|------|------|
+| 404 | Correction not found or already reviewed |
+
+---
+
+## 9. Error Handling
 
 ### Error Response Format
 
@@ -399,7 +593,7 @@ Response (400):
 
 ---
 
-## 9. TypeScript Types
+## 10. TypeScript Types
 
 Copy these types into your frontend project:
 
@@ -488,11 +682,68 @@ interface TranscriptsResponse {
   transcripts: TranscriptLine[];
   count: number;
 }
+
+// ============================================
+// Corrections API Types
+// ============================================
+
+interface CorrectionSubmitRequest {
+  transcript_id: number;
+  suggested_content: string;
+}
+
+interface CorrectionSubmitResponse {
+  id: number;
+  message: string;
+}
+
+interface Correction {
+  id: number;
+  transcript_id: number;
+  original_content: string;
+  suggested_content: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+}
+
+interface ContextLine {
+  id: number;
+  content: string;
+  sequence_index: number;
+  speaker_label: string | null;
+}
+
+interface CorrectionWithContext extends Correction {
+  context_before: ContextLine[];
+  context_after: ContextLine[];
+  battle_title: string | null;
+  video_url: string | null;
+}
+
+interface CorrectionReviewRequest {
+  action: 'approve' | 'reject';
+  reviewer_notes?: string;
+}
+
+interface CorrectionsListResponse {
+  corrections: Correction[];
+  count: number;
+  status: string;
+}
+
+interface CorrectionReviewResponse {
+  success: boolean;
+  message: string;
+  correction_id: number;
+  action: 'approve' | 'reject';
+}
 ```
 
 ---
 
-## 10. Code Examples
+## 11. Code Examples
 
 ### JavaScript/TypeScript Fetch Examples
 
@@ -691,99 +942,3 @@ curl -X POST http://localhost:8000/api/v1/search \
 3. **`youtube_timestamp_link`** → "Watch" button
 4. **`text`** → Context (collapsible/expandable)
 5. **`score`** → Relevance indicator
-
----
-
-## 11. Frontend Integration
-
-### Implementation Status
-
-The Next.js frontend (BattleLines) is now fully connected to the backend API.
-
-### Architecture Overview
-
-```
-Frontend Layer          Transform Layer         Backend Layer
-─────────────────      ───────────────────      ─────────────
-
-useSearch hook    →    API Client      →        FastAPI
-  ↓                      ↓                         ↓
-SearchResult      ←    Adapter         ←        BackendSearchResult
-(frontend types)      (transforms data)        (API response)
-```
-
-### File Structure
-
-```
-src/
-├── lib/
-│   ├── config.ts                    # Environment configuration
-│   ├── api/
-│   │   ├── types.ts                 # Backend API type definitions
-│   │   ├── utils.ts                 # Parsing utilities
-│   │   ├── adapter.ts               # Data transformation layer
-│   │   ├── client.ts                # HTTP client with error handling
-│   │   └── search.ts                # Search service
-│   └── types.ts                     # Frontend types
-├── hooks/
-│   └── use-search.ts                # React hook for search
-└── app/
-    ├── page.tsx                     # Main search page (updated)
-    └── layout.tsx                   # Root layout with Toaster
-```
-
-### Environment Variables
-
-Create `.env.local` with:
-
-```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-```
-
-### How It Works
-
-1. **User searches** → `useSearch` hook called with query
-2. **API request** → `searchService.search()` sends POST to `/api/v1/search`
-3. **Data transformation** → `adaptBackendResults()` converts API format to frontend format
-4. **Display** → Results rendered in `PunchlineCard` components
-
-### Data Transformation
-
-The adapter handles the mismatch between backend and frontend data models:
-
-**Backend Response** → **Frontend Types**
-- `text` field → parsed into `context[]` array
-- `core_text` → mapped to `line`
-- `battle_title` → extracted `league`, created `Battle` object
-- `rapper` name → created `Rapper` object with generated ID
-- `video_url` → extracted YouTube thumbnail URL
-- Generated stable IDs for React keys
-
-### Error Handling
-
-All errors display user-friendly toast notifications:
-
-- Network errors: "Unable to connect to search service"
-- Empty query: "Please enter a search query"
-- Server errors: "Server error occurred. Try again later"
-- No results: Empty state shown (no toast)
-
-### Testing the Integration
-
-1. Start backend:
-   ```bash
-   cd /Users/simon/Documents/code/battlerap_tools/battlerapDB
-   uv run python -m battlerapdb.api.main
-   ```
-
-2. Start frontend:
-   ```bash
-   cd /Users/simon/Documents/code/battlerap_tools/battlerapDB_frontend
-   npm run dev
-   ```
-
-3. Open `http://localhost:9002` and search for something like "Mutter"
-
-### Search Mode Note
-
-The frontend has a "Semantic" vs "Keyword" toggle, but the backend **always performs hybrid search** (combining both). The toggle is kept for UI consistency but both modes send identical requests. Future enhancement could add client-side filtering by `result.type` field.

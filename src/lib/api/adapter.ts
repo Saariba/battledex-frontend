@@ -50,6 +50,7 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
     timestamp: item.timestamp,
     score: item.score,
     type: item.type,
+    line_number: item.line_number,
     battle: {
       id: battleId,
       title: item.battle_title,

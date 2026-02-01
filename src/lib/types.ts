@@ -23,6 +23,7 @@ export interface Punchline {
   timestamp: number; // in seconds
   score?: number;
   type?: 'semantic' | 'exact'; // Match type from backend
+  line_number?: number; // Line number in transcript (for corrections)
 }
 
 export interface SearchResult extends Punchline {

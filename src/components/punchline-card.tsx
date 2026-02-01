@@ -14,6 +14,7 @@ interface PunchlineCardProps {
   searchQuery: string
   onPlayVideo: (result: SearchResult) => void
   onRapperClick?: (rapperName: string) => void
+  onCorrection?: (result: SearchResult) => void
 }
 
 /**
@@ -60,7 +61,7 @@ function highlightKeywords(text: string, query: string): React.ReactNode {
   return parts.length > 0 ? parts : text
 }
 
-export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick }: PunchlineCardProps) {
+export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick, onCorrection }: PunchlineCardProps) {
   const [showContext, setShowContext] = useState(false)
 
   // Highlight keywords only for exact/keyword matches
@@ -70,12 +71,34 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick 
     : result.line
 
   return (
-    <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm">
+    <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm relative">
       <CardHeader className="p-4 pb-2">
+        {onCorrection && (
+          <button
+            onClick={() => onCorrection(result)}
+            className="absolute top-3 right-3 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-10"
+            title="Submit correction"
+          >
+            <span className="text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              Spotted an error?
+            </span>
+            <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">!</span>
+            </div>
+          </button>
+        )}
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
-              <Swords className="w-3 h-3 mr-1" />
+              {result.battle.league === 'DLTLLY' ? (
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSXFzUaStqCCDaBO5wh6nUz6bp7IfaLAUO3Q&s"
+                  alt="DLTLLY"
+                  className="w-3 h-3 mr-1 object-contain"
+                />
+              ) : (
+                <Swords className="w-3 h-3 mr-1" />
+              )}
               {result.battle.league}
             </Badge>
             {result.type && (
@@ -97,9 +120,6 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick 
               </Badge>
             )}
           </div>
-          <span className="font-code text-xs text-muted-foreground bg-background/50 px-2 py-0.5 rounded border border-border/30">
-            T-{Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
-          </span>
         </div>
         <h3 className="text-sm font-semibold text-muted-foreground truncate">{result.battle.title}</h3>
       </CardHeader>

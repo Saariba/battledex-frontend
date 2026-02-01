@@ -4,13 +4,15 @@
 import * as React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { RotateCcw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { RotateCcw, Swords } from "lucide-react"
 import { SearchResult } from "@/lib/types"
 
 interface VideoModalProps {
   result: SearchResult | null
   searchQuery?: string
   onClose: () => void
+  onCorrection?: (result: SearchResult) => void
 }
 
 /**
@@ -49,7 +51,7 @@ function highlightKeywords(text: string, query: string): React.ReactNode {
   return parts.length > 0 ? parts : text
 }
 
-export function VideoModal({ result, searchQuery = '', onClose }: VideoModalProps) {
+export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: VideoModalProps) {
   const [reloadKey, setReloadKey] = React.useState(0)
 
   if (!result) return null
@@ -67,11 +69,34 @@ export function VideoModal({ result, searchQuery = '', onClose }: VideoModalProp
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl bg-background border-primary/20 p-0 overflow-hidden">
-        <DialogHeader className="p-4 bg-card/50">
+        <DialogHeader className="p-4 bg-card/50 relative">
+          {onCorrection && (
+            <button
+              onClick={() => onCorrection(result)}
+              className="absolute top-4 right-4 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-50"
+              title="Submit correction"
+            >
+              <span className="text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                Spotted an error?
+              </span>
+              <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+            </button>
+          )}
           <DialogTitle className="text-primary font-headline flex items-center gap-2">
-            <span className="text-sm font-code text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-              {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
-            </span>
+            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
+              {result.battle.league === 'DLTLLY' ? (
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSXFzUaStqCCDaBO5wh6nUz6bp7IfaLAUO3Q&s"
+                  alt="DLTLLY"
+                  className="w-3 h-3 mr-1 object-contain"
+                />
+              ) : (
+                <Swords className="w-3 h-3 mr-1" />
+              )}
+              {result.battle.league}
+            </Badge>
             {result.battle.title}
           </DialogTitle>
         </DialogHeader>

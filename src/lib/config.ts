@@ -9,6 +9,7 @@ export const config = {
     search: '/api/v1/search',
     battles: '/api/v1/battles',
     rappers: '/api/v1/rappers',
+    corrections: '/api/v1/corrections',
   },
 } as const
 
