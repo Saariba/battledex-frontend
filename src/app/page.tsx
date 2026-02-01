@@ -9,13 +9,13 @@ import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
 import { Flame, Search } from "lucide-react"
 
-type ResultTab = 'all' | 'semantic' | 'exact'
+type ResultTab = 'exact' | 'semantic'
 
 export default function RapBattleApp() {
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<ResultTab>('all')
+  const [activeTab, setActiveTab] = useState<ResultTab>('exact')
   const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
   const { isLoading, results, currentQuery, performSearch } = useSearch()
 
@@ -25,7 +25,7 @@ export default function RapBattleApp() {
 
   // Reset tab and rapper filter when new results come in
   useEffect(() => {
-    setActiveTab('all')
+    setActiveTab('exact')
     setSelectedRapper(null)
   }, [results])
 
@@ -34,9 +34,7 @@ export default function RapBattleApp() {
   const exactCount = results.filter(r => r.type === 'exact').length
 
   // Filter by tab first
-  const tabFilteredResults = activeTab === 'all'
-    ? results
-    : results.filter(r => r.type === activeTab)
+  const tabFilteredResults = results.filter(r => r.type === activeTab)
 
   // Then filter by rapper if selected
   const filteredResults = selectedRapper
@@ -102,16 +100,18 @@ export default function RapBattleApp() {
               {results.length > 0 && (
                 <>
                   <div className="flex gap-2 mb-4">
-                    <button
-                      onClick={() => setActiveTab('all')}
-                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                        activeTab === 'all'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
-                      }`}
-                    >
-                      All ({results.length})
-                    </button>
+                    {exactCount > 0 && (
+                      <button
+                        onClick={() => setActiveTab('exact')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-1.5 ${
+                          activeTab === 'exact'
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
+                        }`}
+                      >
+                        🔍 Keyword ({exactCount})
+                      </button>
+                    )}
 
                     {semanticCount > 0 && (
                       <button
@@ -123,19 +123,6 @@ export default function RapBattleApp() {
                         }`}
                       >
                         🧠 Semantic ({semanticCount})
-                      </button>
-                    )}
-
-                    {exactCount > 0 && (
-                      <button
-                        onClick={() => setActiveTab('exact')}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-1.5 ${
-                          activeTab === 'exact'
-                            ? 'bg-accent text-accent-foreground'
-                            : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
-                        }`}
-                      >
-                        🔍 Keyword ({exactCount})
                       </button>
                     )}
                   </div>
@@ -201,7 +188,7 @@ export default function RapBattleApp() {
                   <Search className="w-12 h-12 text-muted-foreground" />
                 </div>
                 <h3 className="text-2xl font-bold text-muted-foreground">
-                  No {activeTab === 'semantic' ? 'semantic' : 'keyword'} results.
+                  No {activeTab === 'exact' ? 'keyword' : 'semantic'} results.
                 </h3>
                 <p className="text-muted-foreground max-w-sm mx-auto mt-3">
                   Try switching to a different tab to see other results.
