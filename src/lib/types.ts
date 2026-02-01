@@ -22,6 +22,7 @@ export interface Punchline {
   context: string[];
   timestamp: number; // in seconds
   score?: number;
+  type?: 'semantic' | 'exact'; // Match type from backend
 }
 
 export interface SearchResult extends Punchline {

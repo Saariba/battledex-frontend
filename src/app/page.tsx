@@ -1,39 +1,57 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { SearchControls } from "@/components/search-controls"
 import { PunchlineCard } from "@/components/punchline-card"
 import { VideoModal } from "@/components/video-modal"
 import { SearchResult } from "@/lib/types"
-import { MOCK_RESULTS } from "@/lib/mock-data"
+import { useSearch } from "@/hooks/use-search"
 import { Flame, Search } from "lucide-react"
 
+type ResultTab = 'all' | 'semantic' | 'exact'
+
 export default function RapBattleApp() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState<SearchResult[]>([])
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState<ResultTab>('all')
+  const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
+  const { isLoading, results, currentQuery, performSearch } = useSearch()
 
   useEffect(() => {
     setIsMounted(true)
-    setResults(MOCK_RESULTS)
   }, [])
 
-  const handleSearch = async (query: string, mode: 'semantic' | 'keyword') => {
-    setIsLoading(true)
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1200))
-    
-    // In a real app, this would call the AI flows
-    const filtered = MOCK_RESULTS.filter(r => {
-      const matchesSearch = r.line.toLowerCase().includes(query.toLowerCase()) || 
-                           r.context.some(c => c.toLowerCase().includes(query.toLowerCase()))
-      return matchesSearch
+  // Reset tab and rapper filter when new results come in
+  useEffect(() => {
+    setActiveTab('all')
+    setSelectedRapper(null)
+  }, [results])
+
+  // Count results by type from ALL results (so tabs don't disappear)
+  const semanticCount = results.filter(r => r.type === 'semantic').length
+  const exactCount = results.filter(r => r.type === 'exact').length
+
+  // Filter by tab first
+  const tabFilteredResults = activeTab === 'all'
+    ? results
+    : results.filter(r => r.type === activeTab)
+
+  // Then filter by rapper if selected
+  const filteredResults = selectedRapper
+    ? tabFilteredResults.filter(r => r.rapper.name === selectedRapper)
+    : tabFilteredResults
+
+  // Get rapper counts from current tab-filtered results
+  const rapperCounts = React.useMemo(() => {
+    const counts = new Map<string, number>()
+    tabFilteredResults.forEach(result => {
+      const name = result.rapper.name
+      counts.set(name, (counts.get(name) || 0) + 1)
     })
-    
-    setResults(filtered)
-    setIsLoading(false)
-  }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count) // Sort by count descending
+  }, [tabFilteredResults])
 
   if (!isMounted) return null
 
@@ -61,24 +79,99 @@ export default function RapBattleApp() {
               Find punchlines by meaning, rapper, or league using our semantic neural search engine.
             </p>
             <div className="pt-6">
-              <SearchControls onSearch={handleSearch} isLoading={isLoading} />
+              <SearchControls onSearch={performSearch} isLoading={isLoading} />
             </div>
           </section>
 
           <section className="space-y-8">
-            <div className="flex items-center justify-between border-b border-border/40 pb-4">
-              <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                <span className="text-primary">#</span> 
-                {results.length} Results Found
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Sort by:</span>
-                <select className="bg-transparent text-xs font-bold focus:outline-none text-primary cursor-pointer">
-                  <option>Relevance</option>
-                  <option>Impact</option>
-                  <option>Recent</option>
-                </select>
+            <div className="border-b border-border/40 pb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
+                  <span className="text-primary">#</span>
+                  {results.length} Results Found
+                  {selectedRapper && (
+                    <span className="text-base font-normal text-muted-foreground">
+                      • Filtered by {selectedRapper}
+                    </span>
+                  )}
+                </h3>
               </div>
+
+              {results.length > 0 && (
+                <>
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setActiveTab('all')}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        activeTab === 'all'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
+                      }`}
+                    >
+                      All ({results.length})
+                    </button>
+
+                    {semanticCount > 0 && (
+                      <button
+                        onClick={() => setActiveTab('semantic')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-1.5 ${
+                          activeTab === 'semantic'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
+                        }`}
+                      >
+                        🧠 Semantic ({semanticCount})
+                      </button>
+                    )}
+
+                    {exactCount > 0 && (
+                      <button
+                        onClick={() => setActiveTab('exact')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-1.5 ${
+                          activeTab === 'exact'
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground'
+                        }`}
+                      >
+                        🔍 Keyword ({exactCount})
+                      </button>
+                    )}
+                  </div>
+
+                  {rapperCounts.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                          Filter by Rapper
+                        </h4>
+                        {selectedRapper && (
+                          <button
+                            onClick={() => setSelectedRapper(null)}
+                            className="text-xs text-primary hover:text-primary/80 font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {rapperCounts.map(({ name, count }) => (
+                          <button
+                            key={name}
+                            onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                              selectedRapper === name
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-card/50 text-foreground hover:bg-card border border-border/30'
+                            }`}
+                          >
+                            {name} ({count})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {isLoading ? (
@@ -87,15 +180,29 @@ export default function RapBattleApp() {
                   <div key={i} className="h-64 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
                 ))}
               </div>
-            ) : results.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {results.map((result) => (
-                  <PunchlineCard 
-                    key={result.id} 
-                    result={result} 
+            ) : filteredResults.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" key={`results-${activeTab}`}>
+                {filteredResults.map((result) => (
+                  <PunchlineCard
+                    key={result.id}
+                    result={result}
+                    searchQuery={currentQuery}
                     onPlayVideo={setSelectedVideo}
+                    onRapperClick={(rapperName) => setSelectedRapper(rapperName)}
                   />
                 ))}
+              </div>
+            ) : results.length > 0 ? (
+              <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
+                <div className="bg-secondary/20 p-8 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                  <Search className="w-12 h-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-2xl font-bold text-muted-foreground">
+                  No {activeTab === 'semantic' ? 'semantic' : 'keyword'} results.
+                </h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mt-3">
+                  Try switching to a different tab to see other results.
+                </p>
               </div>
             ) : (
               <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
@@ -116,7 +223,7 @@ export default function RapBattleApp() {
         BattleLines AI • Semantic Neural Punchline Search
       </footer>
 
-      <VideoModal result={selectedVideo} onClose={() => setSelectedVideo(null)} />
+      <VideoModal result={selectedVideo} searchQuery={currentQuery} onClose={() => setSelectedVideo(null)} />
     </div>
   )
 }

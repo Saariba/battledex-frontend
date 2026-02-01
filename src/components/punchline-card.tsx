@@ -1,21 +1,73 @@
 
 "use client"
 
+import React, { useState } from "react"
 import { SearchResult } from "@/lib/types"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Play, ChevronDown, ChevronUp, Mic2, Swords } from "lucide-react"
-import { useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface PunchlineCardProps {
   result: SearchResult
+  searchQuery: string
   onPlayVideo: (result: SearchResult) => void
+  onRapperClick?: (rapperName: string) => void
 }
 
-export function PunchlineCard({ result, onPlayVideo }: PunchlineCardProps) {
+/**
+ * Highlight matching keywords in text for exact/keyword matches
+ */
+function highlightKeywords(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text
+
+  // Split query into individual words
+  const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 0)
+
+  // Create regex pattern for fuzzy matching (find words that contain the query)
+  const pattern = queryWords.map(word =>
+    word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
+  ).join('|')
+
+  const regex = new RegExp(`\\b(\\w*(?:${pattern})\\w*)\\b`, 'gi')
+
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index))
+    }
+
+    // Add highlighted match
+    parts.push(
+      <span key={match.index} className="text-yellow-500 font-bold">
+        {match[0]}
+      </span>
+    )
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : text
+}
+
+export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick }: PunchlineCardProps) {
   const [showContext, setShowContext] = useState(false)
+
+  // Highlight keywords only for exact/keyword matches
+  const shouldHighlight = result.type === 'exact'
+  const displayLine = shouldHighlight
+    ? highlightKeywords(result.line, searchQuery)
+    : result.line
 
   return (
     <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm">
@@ -26,6 +78,19 @@ export function PunchlineCard({ result, onPlayVideo }: PunchlineCardProps) {
               <Swords className="w-3 h-3 mr-1" />
               {result.battle.league}
             </Badge>
+            {result.type && (
+              <Badge
+                variant={result.type === 'exact' ? 'default' : 'outline'}
+                className={cn(
+                  "text-[10px] font-code",
+                  result.type === 'exact'
+                    ? "bg-accent text-accent-foreground"
+                    : "border-purple-500/50 text-purple-400"
+                )}
+              >
+                {result.type === 'exact' ? '🔍 Keyword' : '🧠 Semantic'}
+              </Badge>
+            )}
             {result.score && (
               <Badge variant="secondary" className="text-[10px] bg-secondary/50">
                 Match: {(result.score * 100).toFixed(0)}%
@@ -40,29 +105,42 @@ export function PunchlineCard({ result, onPlayVideo }: PunchlineCardProps) {
       </CardHeader>
       
       <CardContent className="p-4 pt-0">
-        <div className="relative pl-4 border-l-2 border-primary mb-4">
-          <p className="text-xl font-bold font-headline leading-tight tracking-tight text-foreground text-glow italic">
-            "{result.line}"
-          </p>
-          <div className="absolute -left-2 top-0 bg-primary text-primary-foreground p-0.5 rounded-full">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="bg-primary text-primary-foreground p-1 rounded-full">
             <Mic2 className="w-3 h-3" />
           </div>
+          <button
+            onClick={() => onRapperClick?.(result.rapper.name)}
+            className="text-sm font-bold text-primary uppercase tracking-wide hover:text-primary/80 transition-colors cursor-pointer"
+          >
+            {result.rapper.name}
+          </button>
+        </div>
+        <div className="relative pl-4 border-l-2 border-primary mb-4">
+          <p className="text-xl font-bold font-headline leading-tight tracking-tight text-foreground text-glow italic">
+            "{displayLine}"
+          </p>
         </div>
 
         {showContext && (
           <div className="space-y-2 mb-4 animate-in slide-in-from-top-2 duration-300">
-            {result.context.map((line, idx) => (
-              <p 
-                key={idx} 
-                className={cn(
-                  "text-sm font-code leading-relaxed",
-                  line === result.line ? "text-foreground font-bold" : "text-muted-foreground opacity-60"
-                )}
-              >
-                <span className="mr-3 opacity-30 select-none">{idx + 1}</span>
-                {line}
-              </p>
-            ))}
+            {result.context.map((line, idx) => {
+              const isCoreLine = line === result.line
+              const contextDisplay = shouldHighlight ? highlightKeywords(line, searchQuery) : line
+
+              return (
+                <p
+                  key={idx}
+                  className={cn(
+                    "text-sm font-code leading-relaxed",
+                    isCoreLine ? "text-foreground font-bold" : "text-muted-foreground opacity-60"
+                  )}
+                >
+                  <span className="mr-3 opacity-30 select-none">{idx + 1}</span>
+                  {contextDisplay}
+                </p>
+              )
+            })}
           </div>
         )}
       </CardContent>
@@ -80,13 +158,13 @@ export function PunchlineCard({ result, onPlayVideo }: PunchlineCardProps) {
             <>View Context <ChevronDown className="ml-1 w-3 h-3" /></>
           )}
         </Button>
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all hover:scale-105"
           onClick={() => onPlayVideo(result)}
         >
           <Play className="mr-1.5 w-3.5 h-3.5 fill-current" />
-          Watch Line
+          Play Video
         </Button>
       </CardFooter>
     </Card>
