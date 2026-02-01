@@ -2,11 +2,16 @@
 "use client"
 
 import * as React from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RotateCcw, Swords } from "lucide-react"
 import { SearchResult } from "@/lib/types"
+import { useYouTubePlayer } from "@/hooks/useYouTubePlayer"
+import { transcriptService } from "@/lib/api/transcripts"
+import { KaraokeLyrics } from "./karaoke-lyrics"
+import { toast } from "@/hooks/use-toast"
+import type { TranscriptLine } from "@/lib/api/types"
 
 interface VideoModalProps {
   result: SearchResult | null
@@ -52,31 +57,63 @@ function highlightKeywords(text: string, query: string): React.ReactNode {
 }
 
 export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: VideoModalProps) {
-  const [reloadKey, setReloadKey] = React.useState(0)
-
+  // Early return before any hooks to avoid conditional hook calls
   if (!result) return null
+
+  return <VideoModalContent result={result} searchQuery={searchQuery} onClose={onClose} onCorrection={onCorrection} />
+}
+
+function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: VideoModalProps & { result: SearchResult }) {
+  const [transcript, setTranscript] = React.useState<TranscriptLine[]>([])
+  const [isLoadingTranscript, setIsLoadingTranscript] = React.useState(false)
 
   // Extract video ID from youtube URL
   const videoId = result.battle.youtubeUrl.includes('v=')
     ? result.battle.youtubeUrl.split('v=')[1].split('&')[0]
     : '';
 
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?start=${result.timestamp}&autoplay=1&key=${reloadKey}`;
+  const playerId = `youtube-player-${result.id}`
+
+  // YouTube player integration
+  const { player, isReady, isPlaying, currentTime } = useYouTubePlayer(
+    playerId,
+    videoId,
+    result.timestamp
+  )
+
+  // Fetch transcript when modal opens
+  React.useEffect(() => {
+    if (result.battleId) {
+      setIsLoadingTranscript(true)
+      transcriptService
+        .getTranscript(result.battleId)
+        .then(setTranscript)
+        .catch((err) => {
+          console.error('Failed to load transcript:', err)
+          toast({
+            title: "Could not load lyrics",
+            description: "Lyrics are unavailable for this battle",
+            variant: "destructive",
+          })
+        })
+        .finally(() => setIsLoadingTranscript(false))
+    }
+  }, [result.battleId])
 
   const shouldHighlight = result.type === 'exact'
   const displayLine = shouldHighlight ? highlightKeywords(result.line, searchQuery) : result.line
 
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl bg-background border-primary/20 p-0 overflow-hidden">
-        <DialogHeader className="p-4 bg-card/50 relative">
+      <DialogContent className="max-w-4xl w-[95vw] sm:w-full bg-background border-primary/20 p-0 overflow-hidden">
+        <DialogHeader className="p-3 sm:p-4 bg-card/50 relative">
           {onCorrection && (
             <button
               onClick={() => onCorrection(result)}
-              className="absolute top-4 right-4 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-50"
+              className="absolute top-3 sm:top-4 right-3 sm:right-4 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-50"
               title="Submit correction"
             >
-              <span className="text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              <span className="hidden sm:inline text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                 Spotted an error?
               </span>
               <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
@@ -84,8 +121,8 @@ export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: 
               </div>
             </button>
           )}
-          <DialogTitle className="text-primary font-headline flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
+          <DialogTitle className="text-primary font-headline flex items-center gap-2 pr-8 sm:pr-0 text-sm sm:text-base">
+            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary flex-shrink-0">
               {result.battle.league === 'DLTLLY' ? (
                 <img
                   src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSXFzUaStqCCDaBO5wh6nUz6bp7IfaLAUO3Q&s"
@@ -97,35 +134,52 @@ export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: 
               )}
               {result.battle.league}
             </Badge>
-            {result.battle.title}
+            <span className="truncate">{result.battle.title}</span>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Watch the battle video with live synced lyrics
+          </DialogDescription>
         </DialogHeader>
         <div className="aspect-video w-full bg-black">
-          <iframe
-            key={reloadKey}
-            width="100%"
-            height="100%"
-            src={embedUrl}
-            title="YouTube video player"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          ></iframe>
+          <div id={playerId} className="w-full h-full" />
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div>
-            <p className="text-lg font-bold text-foreground mb-2 italic">"{displayLine}"</p>
-            <p className="text-sm text-muted-foreground">— {result.rapper.name} in {result.battle.league}</p>
+            <p className="text-base sm:text-lg font-bold text-foreground mb-2 italic break-words">"{displayLine}"</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">— {result.rapper.name} in {result.battle.league}</p>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Live karaoke lyrics */}
+          {transcript.length > 0 ? (
+            <div className="border-t border-border/30 pt-4 sm:pt-6">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                Live Lyrics
+              </h4>
+              <KaraokeLyrics
+                transcript={transcript}
+                currentTime={currentTime}
+                isPlaying={isPlaying}
+              />
+            </div>
+          ) : isLoadingTranscript ? (
+            <div className="text-center py-6 sm:py-8 border-t border-border/30 pt-4 sm:pt-6">
+              <div className="animate-pulse text-sm text-muted-foreground">
+                Loading lyrics...
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setReloadKey(k => k + 1)}
-              className="gap-2"
+              onClick={() => player?.seekTo(result.timestamp, true)}
+              disabled={!isReady}
+              className="gap-2 text-xs sm:text-sm"
             >
-              <RotateCcw className="w-4 h-4" />
-              Rewind to Line
+              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Rewind to Line</span>
+              <span className="xs:hidden">Rewind</span>
             </Button>
             <span className="text-xs text-muted-foreground">
               {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}

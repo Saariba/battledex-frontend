@@ -17,6 +17,7 @@ export interface BackendSearchResultItem {
   text: string
   core_text?: string
   rapper?: string
+  battle_id?: string
   battle_title: string
   video_url: string
   timestamp: number
@@ -53,4 +54,19 @@ export interface CorrectionSubmitRequest {
 export interface CorrectionSubmitResponse {
   id: number
   message: string
+}
+
+// Transcript API Types
+export interface TranscriptLine {
+  id: number
+  content: string
+  start_time: number
+  end_time: number | null
+  sequence_index: number
+  speaker_label: string | null
+}
+
+export interface TranscriptsResponse {
+  transcripts: TranscriptLine[]
+  count: number
 }

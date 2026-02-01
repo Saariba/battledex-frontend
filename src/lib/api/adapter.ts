@@ -25,12 +25,13 @@ export function adaptBackendResults(
  * Transform a single backend result to frontend format
  */
 function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
-  // Generate IDs
-  const battleId = generateId('battle', item.battle_title)
+  // Use UUID from backend or fallback to generated ID
+  const battleId = item.battle_id || generateId('battle', item.battle_title)
+  const battleIdSlug = generateId('battle', item.battle_title)
   const rapperId = item.rapper ? generateId('rapper', item.rapper) : 'rapper-unknown'
   const lineNumber = item.line_number ?? Math.floor(item.timestamp)
   // Include type in ID to differentiate semantic vs exact matches for the same line
-  const resultId = `${battleId}-${rapperId}-${lineNumber}-${item.type}`
+  const resultId = `${battleIdSlug}-${rapperId}-${lineNumber}-${item.type}`
 
   // Parse context from text field
   const contextLines = parseContextFromText(item.text)
@@ -44,6 +45,7 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
   return {
     id: resultId,
     battleId,
+    battleIdSlug,
     rapperId,
     line: item.core_text || contextLines[0] || item.text,
     context: contextLines,
@@ -52,7 +54,7 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
     type: item.type,
     line_number: item.line_number,
     battle: {
-      id: battleId,
+      id: battleIdSlug,
       title: item.battle_title,
       league,
       youtubeUrl: item.video_url,
