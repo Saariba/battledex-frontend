@@ -137,7 +137,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           </button>
         </div>
         <div className="relative pl-4 border-l-2 border-primary mb-4">
-          <p className="text-xl font-bold font-headline leading-tight tracking-tight text-foreground text-glow italic">
+          <p className="text-lg font-bold font-mono leading-tight text-foreground text-glow">
             "{displayLine}"
           </p>
         </div>
@@ -152,7 +152,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
                 <p
                   key={idx}
                   className={cn(
-                    "text-sm font-code leading-relaxed",
+                    "text-sm font-mono leading-relaxed",
                     isCoreLine ? "text-foreground font-bold" : "text-muted-foreground opacity-60"
                   )}
                 >
@@ -166,9 +166,9 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2 bg-black/20">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setShowContext(!showContext)}
           className="text-xs text-muted-foreground hover:text-foreground"
         >

@@ -30,7 +30,7 @@ export function useSearch() {
     try {
       // Note: mode parameter is kept for UI compatibility
       // Backend always performs hybrid search
-      const searchResults = await searchService.search(query, 20)
+      const searchResults = await searchService.search(query, 100)
 
       setResults(searchResults)
 
