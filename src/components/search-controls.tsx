@@ -9,10 +9,16 @@ import { Search } from "lucide-react"
 interface SearchControlsProps {
   onSearch: (query: string, mode: 'semantic' | 'keyword') => void
   isLoading?: boolean
+  value?: string
+  onValueChange?: (value: string) => void
 }
 
-export function SearchControls({ onSearch, isLoading }: SearchControlsProps) {
-  const [query, setQuery] = useState("")
+export function SearchControls({ onSearch, isLoading, value, onValueChange }: SearchControlsProps) {
+  const [internalQuery, setInternalQuery] = useState("")
+
+  // Use controlled value if provided, otherwise use internal state
+  const query = value !== undefined ? value : internalQuery
+  const setQuery = onValueChange || setInternalQuery
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

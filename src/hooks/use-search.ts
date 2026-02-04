@@ -7,11 +7,13 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import type { SearchResult } from '@/lib/types'
 import { searchService } from '@/lib/api/search'
-import { ApiError } from '@/lib/api/types'
+import { similarWordsService } from '@/lib/api/similar-words'
+import { ApiError, type SimilarWord } from '@/lib/api/types'
 
 export function useSearch() {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
+  const [similarWords, setSimilarWords] = useState<SimilarWord[]>([])
   const [currentQuery, setCurrentQuery] = useState('')
 
   const performSearch = async (
@@ -30,9 +32,18 @@ export function useSearch() {
     try {
       // Note: mode parameter is kept for UI compatibility
       // Backend always performs hybrid search
-      const searchResults = await searchService.search(query, 100)
+      // Fetching more results for infinite scroll (filtering to exact only)
+      // Fetch search results and similar words in parallel
+      const [searchResults, similarWordsData] = await Promise.all([
+        searchService.search(query, 50),
+        similarWordsService.getSimilarWords(query, 10).catch(() => ({
+          query,
+          similar_words: []
+        }))
+      ])
 
       setResults(searchResults)
+      setSimilarWords(similarWordsData.similar_words)
 
       if (searchResults.length === 0) {
         // Don't show toast for empty results, let UI handle it
@@ -62,8 +73,9 @@ export function useSearch() {
         toast.error('Unexpected error occurred')
       }
 
-      // Clear results on error
+      // Clear results and similar words on error
       setResults([])
+      setSimilarWords([])
     } finally {
       setIsLoading(false)
     }
@@ -72,6 +84,7 @@ export function useSearch() {
   return {
     isLoading,
     results,
+    similarWords,
     currentQuery,
     performSearch,
     setResults,

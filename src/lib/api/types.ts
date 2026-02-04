@@ -70,3 +70,14 @@ export interface TranscriptsResponse {
   transcripts: TranscriptLine[]
   count: number
 }
+
+// Similar Words API Types
+export interface SimilarWord {
+  word: string
+  count: number
+}
+
+export interface SimilarWordsResponse {
+  query: string
+  similar_words: SimilarWord[]
+}
