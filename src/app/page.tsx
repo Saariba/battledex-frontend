@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import Link from "next/link"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
 import { PunchlineCard } from "@/components/punchline-card"
@@ -8,7 +9,7 @@ import { VideoModal } from "@/components/video-modal"
 import { CorrectionModal } from "@/components/correction-modal"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
-import { Search } from "lucide-react"
+import { Search, Swords } from "lucide-react"
 
 export default function RapBattleApp() {
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
@@ -81,7 +82,7 @@ export default function RapBattleApp() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="h-20 flex items-center px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
+      <header className="h-20 flex items-center justify-between px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <img
             src="/battledex-logo.png"
@@ -89,6 +90,15 @@ export default function RapBattleApp() {
             className="h-12 w-auto object-contain"
           />
         </div>
+        <nav>
+          <Link
+            href="/battles"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Swords className="w-4 h-4" />
+            Browse Battles
+          </Link>
+        </nav>
       </header>
 
       <main className="flex-1 overflow-y-auto p-6 md:p-10">

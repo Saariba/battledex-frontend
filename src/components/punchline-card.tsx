@@ -6,6 +6,7 @@ import { SearchResult } from "@/lib/types"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ShareButton } from "@/components/share-button"
 import { Play, ChevronDown, ChevronUp, Mic2, Swords } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -178,6 +179,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
             <>View Context <ChevronDown className="ml-1 w-3 h-3" /></>
           )}
         </Button>
+        <ShareButton result={result} />
         <Button
           size="sm"
           className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all hover:scale-105"

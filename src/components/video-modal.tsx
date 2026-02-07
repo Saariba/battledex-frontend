@@ -143,6 +143,26 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
         <div className="aspect-video w-full bg-black">
           <div id={playerId} className="w-full h-full" />
         </div>
+
+        {/* Rewind button directly under video */}
+        <div className="px-4 pt-3 pb-2 bg-card/30 border-b border-border/20">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => player?.seekTo(result.timestamp, true)}
+              disabled={!isReady}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Rewind to Line
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div>
             <p className="text-base sm:text-lg font-bold text-foreground mb-2 italic break-words">"{displayLine}"</p>
@@ -168,23 +188,6 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
               </div>
             </div>
           ) : null}
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => player?.seekTo(result.timestamp, true)}
-              disabled={!isReady}
-              className="gap-2 text-xs sm:text-sm"
-            >
-              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Rewind to Line</span>
-              <span className="xs:hidden">Rewind</span>
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
-            </span>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
