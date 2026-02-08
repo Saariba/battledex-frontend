@@ -17,6 +17,7 @@ export interface BackendSearchRequest {
 export interface BackendSearchResultItem {
   text: string
   core_text?: string
+  context_lines?: string[]
   rapper?: string
   battle_id?: string
   battle_title: string

@@ -63,13 +63,22 @@ function highlightKeywords(text: string, query: string): React.ReactNode {
 }
 
 export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick, onCorrection }: PunchlineCardProps) {
-  const [showContext, setShowContext] = useState(false)
+  const [showFullContext, setShowFullContext] = useState(false)
 
   // Highlight keywords only for exact/keyword matches
   const shouldHighlight = result.type === 'exact'
   const displayLine = shouldHighlight
     ? highlightKeywords(result.line, searchQuery)
     : result.line
+
+  // Find core line index in context to show surrounding lines
+  const coreLineIndex = result.context.findIndex(line => line === result.line)
+  const hasContext = result.context.length > 1
+  const lineAbove = coreLineIndex > 0 ? result.context[coreLineIndex - 1] : null
+  const lineBelow = coreLineIndex >= 0 && coreLineIndex < result.context.length - 1
+    ? result.context[coreLineIndex + 1]
+    : null
+  const hasMoreContext = result.context.length > 3
 
   return (
     <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm relative shadow-md">
@@ -124,7 +133,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
         </div>
         <h3 className="text-sm font-semibold text-muted-foreground truncate">{result.battle.title}</h3>
       </CardHeader>
-      
+
       <CardContent className="p-4 pt-0">
         <div className="flex items-center gap-2 mb-2">
           <div className="bg-primary text-primary-foreground p-1 rounded-full">
@@ -138,12 +147,22 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           </button>
         </div>
         <div className="relative pl-4 border-l-2 border-primary mb-4">
+          {hasContext && lineAbove && !showFullContext && (
+            <p className="text-sm font-mono leading-tight text-muted-foreground/60 mb-1">
+              {shouldHighlight ? highlightKeywords(lineAbove, searchQuery) : lineAbove}
+            </p>
+          )}
           <p className="text-lg font-bold font-mono leading-tight text-foreground text-glow">
             "{displayLine}"
           </p>
+          {hasContext && lineBelow && !showFullContext && (
+            <p className="text-sm font-mono leading-tight text-muted-foreground/60 mt-1">
+              {shouldHighlight ? highlightKeywords(lineBelow, searchQuery) : lineBelow}
+            </p>
+          )}
         </div>
 
-        {showContext && (
+        {showFullContext && (
           <div className="space-y-2 mb-4 animate-in slide-in-from-top-2 duration-300">
             {result.context.map((line, idx) => {
               const isCoreLine = line === result.line
@@ -167,18 +186,22 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowContext(!showContext)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-all duration-300"
-        >
-          {showContext ? (
-            <>Hide Context <ChevronUp className="ml-1 w-3 h-3" /></>
-          ) : (
-            <>View Context <ChevronDown className="ml-1 w-3 h-3" /></>
-          )}
-        </Button>
+        {hasMoreContext ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFullContext(!showFullContext)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-all duration-300"
+          >
+            {showFullContext ? (
+              <>Hide Context <ChevronUp className="ml-1 w-3 h-3" /></>
+            ) : (
+              <>Full Context <ChevronDown className="ml-1 w-3 h-3" /></>
+            )}
+          </Button>
+        ) : (
+          <div />
+        )}
         <ShareButton result={result} />
         <Button
           size="sm"

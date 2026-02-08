@@ -33,8 +33,10 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
   // Include type in ID to differentiate semantic vs exact matches for the same line
   const resultId = `${battleIdSlug}-${rapperId}-${lineNumber}-${item.type}`
 
-  // Parse context from text field
-  const contextLines = parseContextFromText(item.text)
+  // Use backend context_lines if available, otherwise parse from text
+  const contextLines = item.context_lines && item.context_lines.length > 0
+    ? item.context_lines
+    : parseContextFromText(item.text)
 
   // Extract league from battle title
   const league = extractLeague(item.battle_title)

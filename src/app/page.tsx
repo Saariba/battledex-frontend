@@ -1,7 +1,6 @@
 "use client"
 
 import React, { Suspense, useState, useEffect, useRef, useCallback } from "react"
-import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
@@ -12,7 +11,7 @@ import { CorrectionModal } from "@/components/correction-modal"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
-import { Search, Swords, BarChart3 } from "lucide-react"
+import { Search } from "lucide-react"
 
 export default function RapBattleApp() {
   return (
@@ -137,33 +136,7 @@ function RapBattleAppInner() {
   if (!isMounted) return null
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="h-20 flex items-center justify-between px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <img
-            src="/battledex-logo.png"
-            alt="BattleDex"
-            className="h-12 w-auto object-contain"
-          />
-        </div>
-        <nav className="flex items-center gap-4">
-          <Link
-            href="/battles"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Swords className="w-4 h-4" />
-            Browse Battles
-          </Link>
-          <Link
-            href="/stats"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
-          >
-            <BarChart3 className="w-4 h-4" />
-            DB Stats
-          </Link>
-        </nav>
-      </header>
-
+    <>
       <main className="flex-1 overflow-y-auto p-6 md:p-10">
         <div className="max-w-5xl mx-auto space-y-12">
           <section className="text-center space-y-6 py-10">
@@ -320,10 +293,6 @@ function RapBattleAppInner() {
         </div>
       </main>
 
-      <footer className="p-8 text-center border-t border-border/20 text-muted-foreground text-[10px] font-mono uppercase tracking-[0.2em]">
-        BATTLEDEX • Neural Punchline Database
-      </footer>
-
       <VideoModal
         result={selectedVideo}
         searchQuery={currentQuery}
@@ -334,6 +303,6 @@ function RapBattleAppInner() {
         }}
       />
       <CorrectionModal result={correctionResult} onClose={() => setCorrectionResult(null)} />
-    </div>
+    </>
   )
 }

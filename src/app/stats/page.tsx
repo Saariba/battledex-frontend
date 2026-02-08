@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { statsService } from '@/lib/api/stats'
 import type { StatsResponse } from '@/lib/api/stats'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -73,35 +72,6 @@ export default function StatsPage() {
   ] : []
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="h-20 flex items-center justify-between px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <Link href="/">
-            <img
-              src="/battledex-logo.png"
-              alt="BattleDex"
-              className="h-12 w-auto object-contain cursor-pointer"
-            />
-          </Link>
-        </div>
-        <nav className="flex items-center gap-4">
-          <Link
-            href="/battles"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Swords className="w-4 h-4" />
-            Browse Battles
-          </Link>
-          <Link
-            href="/stats"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary transition-colors"
-          >
-            <BarChart3 className="w-4 h-4" />
-            DB Stats
-          </Link>
-        </nav>
-      </header>
-
       <main className="flex-1 overflow-y-auto p-6 md:p-10">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Page Header */}
@@ -184,10 +154,5 @@ export default function StatsPage() {
           )}
         </div>
       </main>
-
-      <footer className="p-8 text-center border-t border-border/20 text-muted-foreground text-[10px] font-mono uppercase tracking-[0.2em]">
-        BATTLEDEX • Neural Punchline Database
-      </footer>
-    </div>
   )
 }
