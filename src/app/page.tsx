@@ -76,18 +76,26 @@ function RapBattleAppInner() {
 
   // Wrap performSearch to also update URL
   const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword') => {
+    setSelectedRapper(null)
     router.push(`?q=${encodeURIComponent(query)}`, { scroll: false })
     performSearch(query, mode)
   }, [router, performSearch])
+
+  // Handle rapper filter: re-fetch from backend with filter applied
+  const handleRapperFilter = useCallback((rapperName: string | null) => {
+    setSelectedRapper(rapperName)
+    if (currentQuery) {
+      performSearch(currentQuery, 'semantic', rapperName)
+    }
+  }, [currentQuery, performSearch])
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Reset rapper filter when new results come in
+  // Reset display count when results change
   useEffect(() => {
-    setSelectedRapper(null)
-    setDisplayCount(25) // Reset display count on new search
+    setDisplayCount(25)
   }, [results])
 
   // Infinite scroll: load more results when scrolling near bottom
@@ -108,14 +116,9 @@ function RapBattleAppInner() {
     return () => observer.disconnect()
   }, [isLoading])
 
-  // Filter by rapper if selected
-  const filteredResults = selectedRapper
-    ? results.filter(r => r.rapper.name === selectedRapper)
-    : results
-
   // Slice results for progressive rendering
-  const displayedResults = filteredResults.slice(0, displayCount)
-  const hasMore = displayCount < filteredResults.length
+  const displayedResults = results.slice(0, displayCount)
+  const hasMore = displayCount < results.length
 
   // Get rapper counts from backend (accurate across all matches, not just loaded results)
   const rapperCounts = React.useMemo(() => {
@@ -193,7 +196,7 @@ function RapBattleAppInner() {
                         </h4>
                         {selectedRapper && (
                           <button
-                            onClick={() => setSelectedRapper(null)}
+                            onClick={() => handleRapperFilter(null)}
                             className="text-xs text-primary hover:text-primary/80 font-semibold"
                           >
                             Clear
@@ -207,7 +210,7 @@ function RapBattleAppInner() {
                           {topRappers.map(({ name, count }) => (
                             <div key={name} className="flex items-center gap-1">
                               <button
-                                onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
+                                onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
                                 className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                                   selectedRapper === name
                                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
@@ -231,7 +234,7 @@ function RapBattleAppInner() {
                             <RapperFilterDropdown
                               rappers={remainingRappers}
                               selectedRapper={selectedRapper}
-                              onSelect={(name) => setSelectedRapper(selectedRapper === name ? null : name)}
+                              onSelect={(name) => handleRapperFilter(selectedRapper === name ? null : name)}
                             />
                           )}
                         </div>
@@ -255,7 +258,7 @@ function RapBattleAppInner() {
                   <PunchlineCardSkeleton key={i} />
                 ))}
               </div>
-            ) : filteredResults.length > 0 ? (
+            ) : results.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {displayedResults.map((result) => (
@@ -264,7 +267,7 @@ function RapBattleAppInner() {
                       result={result}
                       searchQuery={currentQuery}
                       onPlayVideo={setSelectedVideo}
-                      onRapperClick={(rapperName) => setSelectedRapper(rapperName)}
+                      onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
                       onCorrection={(result) => setCorrectionResult(result)}
                     />
                   ))}
@@ -275,10 +278,10 @@ function RapBattleAppInner() {
                     <p className="mt-3 text-sm text-muted-foreground font-medium">Loading more results...</p>
                   </div>
                 )}
-                {!hasMore && filteredResults.length > 25 && (
+                {!hasMore && results.length > 25 && (
                   <div className="py-8 text-center">
                     <p className="text-sm text-muted-foreground">
-                      Showing all {filteredResults.length} results
+                      Showing all {results.length} results
                     </p>
                   </div>
                 )}

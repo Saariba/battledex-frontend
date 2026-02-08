@@ -21,7 +21,8 @@ export function useSearch() {
 
   const performSearch = async (
     query: string,
-    mode: 'semantic' | 'keyword' = 'semantic'
+    mode: 'semantic' | 'keyword' = 'semantic',
+    rapperFilter?: string | null,
   ) => {
     // Validate query
     if (!query.trim()) {
@@ -33,8 +34,10 @@ export function useSearch() {
     setCurrentQuery(query)
 
     try {
+      const filterObj = rapperFilter ? { rapper_name: rapperFilter } : undefined
+
       // Generate cache keys
-      const searchKey = generateCacheKey('search', query, mode)
+      const searchKey = generateCacheKey('search', query, mode, rapperFilter || '')
       const similarWordsKey = generateCacheKey('similar', query)
 
       // Try to get from cache first
@@ -52,7 +55,7 @@ export function useSearch() {
       }
 
       // Fetch search results first (critical path)
-      const searchResults = cachedSearch || await searchService.search(query, 100)
+      const searchResults = cachedSearch || await searchService.search(query, 100, filterObj)
 
       if (!cachedSearch) {
         searchCache.set(searchKey, searchResults)
@@ -60,7 +63,10 @@ export function useSearch() {
 
       setResults(searchResults.results)
       setTotalResults(searchResults.total)
-      setRapperCounts(searchResults.rapperCounts || {})
+      // Only update rapper counts from unfiltered searches
+      if (!rapperFilter) {
+        setRapperCounts(searchResults.rapperCounts || {})
+      }
 
       if (searchResults.results.length === 0) {
         console.log('No results found for query:', query)
