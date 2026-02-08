@@ -1,6 +1,7 @@
 "use client"
 
 import React, { Suspense, useState, useEffect, useRef, useCallback } from "react"
+import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
@@ -11,7 +12,7 @@ import { CorrectionModal } from "@/components/correction-modal"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
-import { Search } from "lucide-react"
+import { Search, ExternalLink } from "lucide-react"
 
 export default function RapBattleApp() {
   return (
@@ -208,17 +209,25 @@ function RapBattleAppInner() {
                         {/* Top rappers as buttons */}
                         <div className="flex flex-wrap gap-2">
                           {topRappers.map(({ name, count }) => (
-                            <button
-                              key={name}
-                              onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                                selectedRapper === name
-                                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
-                                  : 'bg-card/50 text-foreground hover:bg-card hover:scale-102 border border-border/30'
-                              }`}
-                            >
-                              {name} ({count})
-                            </button>
+                            <div key={name} className="flex items-center gap-1">
+                              <button
+                                onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                                  selectedRapper === name
+                                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
+                                    : 'bg-card/50 text-foreground hover:bg-card hover:scale-102 border border-border/30'
+                                }`}
+                              >
+                                {name} ({count})
+                              </button>
+                              <Link
+                                href={`/rappers/${encodeURIComponent(name)}`}
+                                className="text-muted-foreground/40 hover:text-primary transition-colors p-1"
+                                title={`View ${name}'s profile`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            </div>
                           ))}
 
                           {/* Dropdown for remaining rappers */}

@@ -2,12 +2,13 @@
 "use client"
 
 import React, { useState } from "react"
+import Link from "next/link"
 import { SearchResult } from "@/lib/types"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShareButton } from "@/components/share-button"
-import { Play, ChevronDown, ChevronUp, Mic2, Swords } from "lucide-react"
+import { Play, ChevronDown, ChevronUp, Mic2, Swords, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface PunchlineCardProps {
@@ -145,6 +146,13 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           >
             {result.rapper.name}
           </button>
+          <Link
+            href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
+            className="text-muted-foreground/50 hover:text-primary transition-colors"
+            title={`View ${result.rapper.name}'s profile`}
+          >
+            <ExternalLink className="w-3 h-3" />
+          </Link>
         </div>
         <div className="relative pl-4 border-l-2 border-primary mb-4">
           {hasContext && lineAbove && !showFullContext && (
