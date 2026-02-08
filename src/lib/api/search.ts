@@ -21,7 +21,7 @@ export const searchService = {
     query: string,
     topK: number = 20,
     filters?: { rapper_name?: string }
-  ): Promise<{ results: SearchResult[], total: number }> {
+  ): Promise<{ results: SearchResult[], total: number, rapperCounts: Record<string, number> }> {
     const requestBody: BackendSearchRequest = {
       query,
       top_k: topK,
@@ -39,7 +39,8 @@ export const searchService = {
 
     return {
       results: adaptBackendResults(response.results),
-      total: response.total_text_matches
+      total: response.total_text_matches,
+      rapperCounts: response.rapper_counts || {},
     }
   },
 }

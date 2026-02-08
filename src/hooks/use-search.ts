@@ -16,6 +16,7 @@ export function useSearch() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [totalResults, setTotalResults] = useState(0)
   const [similarWords, setSimilarWords] = useState<SimilarWord[]>([])
+  const [rapperCounts, setRapperCounts] = useState<Record<string, number>>({})
   const [currentQuery, setCurrentQuery] = useState('')
 
   const performSearch = async (
@@ -37,13 +38,14 @@ export function useSearch() {
       const similarWordsKey = generateCacheKey('similar', query)
 
       // Try to get from cache first
-      const cachedSearch = searchCache.get<{ results: SearchResult[], total: number }>(searchKey)
+      const cachedSearch = searchCache.get<{ results: SearchResult[], total: number, rapperCounts: Record<string, number> }>(searchKey)
       const cachedSimilar = similarWordsCache.get<{ query: string, similar_words: SimilarWord[] }>(similarWordsKey)
 
       // If both cached, return immediately
       if (cachedSearch && cachedSimilar) {
         setResults(cachedSearch.results)
         setTotalResults(cachedSearch.total)
+        setRapperCounts(cachedSearch.rapperCounts || {})
         setSimilarWords(cachedSimilar.similar_words)
         setIsLoading(false)
         return
@@ -58,6 +60,7 @@ export function useSearch() {
 
       setResults(searchResults.results)
       setTotalResults(searchResults.total)
+      setRapperCounts(searchResults.rapperCounts || {})
 
       if (searchResults.results.length === 0) {
         console.log('No results found for query:', query)
@@ -101,6 +104,7 @@ export function useSearch() {
       // Clear results and similar words on error
       setResults([])
       setTotalResults(0)
+      setRapperCounts({})
       setSimilarWords([])
     } finally {
       setIsLoading(false)
@@ -111,6 +115,7 @@ export function useSearch() {
     isLoading,
     results,
     totalResults,
+    rapperCounts,
     similarWords,
     currentQuery,
     performSearch,

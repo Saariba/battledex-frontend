@@ -33,7 +33,7 @@ function RapBattleAppInner() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isLoading, results, totalResults, similarWords, currentQuery, performSearch } = useSearch()
+  const { isLoading, results, totalResults, rapperCounts: backendRapperCounts, similarWords, currentQuery, performSearch } = useSearch()
   const hasRunInitialSearch = useRef(false)
 
   const handleSimilarWordClick = (word: string) => {
@@ -117,17 +117,12 @@ function RapBattleAppInner() {
   const displayedResults = filteredResults.slice(0, displayCount)
   const hasMore = displayCount < filteredResults.length
 
-  // Get rapper counts from results
+  // Get rapper counts from backend (accurate across all matches, not just loaded results)
   const rapperCounts = React.useMemo(() => {
-    const counts = new Map<string, number>()
-    results.forEach(result => {
-      const name = result.rapper.name
-      counts.set(name, (counts.get(name) || 0) + 1)
-    })
-    return Array.from(counts.entries())
+    return Object.entries(backendRapperCounts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-  }, [results])
+  }, [backendRapperCounts])
 
   // Split rappers into top N and rest
   const TOP_RAPPERS_COUNT = 5

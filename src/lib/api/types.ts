@@ -35,6 +35,7 @@ export interface BackendSearchResponse {
   total: number
   total_text_matches: number
   results: BackendSearchResultItem[]
+  rapper_counts: Record<string, number>
 }
 
 export class ApiError extends Error {
