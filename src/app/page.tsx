@@ -165,6 +165,7 @@ function RapBattleAppInner() {
             </div>
           </section>
 
+          {(currentQuery || isLoading) && (
           <section className="space-y-8">
             <div className="border-b border-border/40 pb-6 bg-card/20 rounded-t-2xl p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
@@ -299,6 +300,7 @@ function RapBattleAppInner() {
               </div>
             )}
           </section>
+          )}
         </div>
       </main>
 
