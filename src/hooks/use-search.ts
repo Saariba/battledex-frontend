@@ -49,42 +49,31 @@ export function useSearch() {
         return
       }
 
-      // Fetch missing data (only if not cached)
-      const promises: Promise<any>[] = []
+      // Fetch search results first (critical path)
+      const searchResults = cachedSearch || await searchService.search(query, 100)
 
-      if (!cachedSearch) {
-        promises.push(searchService.search(query, 500))
-      } else {
-        promises.push(Promise.resolve(cachedSearch))
-      }
-
-      if (!cachedSimilar) {
-        promises.push(similarWordsService.getSimilarWords(query, 10).catch(() => ({
-          query,
-          similar_words: []
-        })))
-      } else {
-        promises.push(Promise.resolve(cachedSimilar))
-      }
-
-      const [searchResults, similarWordsData] = await Promise.all(promises)
-
-      // Cache the results (only if they weren't cached before)
       if (!cachedSearch) {
         searchCache.set(searchKey, searchResults)
-      }
-      if (!cachedSimilar) {
-        similarWordsCache.set(similarWordsKey, similarWordsData)
       }
 
       setResults(searchResults.results)
       setTotalResults(searchResults.total)
-      setSimilarWords(similarWordsData.similar_words)
 
-      if (searchResults.length === 0) {
-        // Don't show toast for empty results, let UI handle it
+      if (searchResults.results.length === 0) {
         console.log('No results found for query:', query)
       }
+
+      // Fetch similar words lazily after search results are displayed
+      const similarWordsData = cachedSimilar || await similarWordsService.getSimilarWords(query, 10).catch(() => ({
+        query,
+        similar_words: []
+      }))
+
+      if (!cachedSimilar) {
+        similarWordsCache.set(similarWordsKey, similarWordsData)
+      }
+
+      setSimilarWords(similarWordsData.similar_words)
     } catch (error) {
       console.error('Search error:', error)
 

@@ -1,10 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
+import { useSearchParams, useRouter } from "next/navigation"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
 import { PunchlineCard } from "@/components/punchline-card"
+import { PunchlineCardSkeleton } from "@/components/punchline-card-skeleton"
 import { VideoModal } from "@/components/video-modal"
 import { CorrectionModal } from "@/components/correction-modal"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
@@ -13,19 +15,70 @@ import { useSearch } from "@/hooks/use-search"
 import { Search, Swords, BarChart3 } from "lucide-react"
 
 export default function RapBattleApp() {
+  return (
+    <Suspense>
+      <RapBattleAppInner />
+    </Suspense>
+  )
+}
+
+function RapBattleAppInner() {
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
-  const [displayCount, setDisplayCount] = useState(25) // Number of results to display
+  const [displayCount, setDisplayCount] = useState(25)
   const [searchQuery, setSearchQuery] = useState("")
-  const loadMoreRef = React.useRef<HTMLDivElement>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { isLoading, results, totalResults, similarWords, currentQuery, performSearch } = useSearch()
+  const hasRunInitialSearch = useRef(false)
 
   const handleSimilarWordClick = (word: string) => {
     setSearchQuery(word)
+    router.push(`?q=${encodeURIComponent(word)}`, { scroll: false })
     performSearch(word, 'semantic')
   }
+
+  // Sync URL query param to state and auto-trigger search on load
+  useEffect(() => {
+    const q = searchParams.get("q")
+    if (q && !hasRunInitialSearch.current) {
+      hasRunInitialSearch.current = true
+      setSearchQuery(q)
+      performSearch(q, "semantic")
+    }
+  }, [searchParams, performSearch])
+
+  // Update document.title based on search state
+  useEffect(() => {
+    if (currentQuery) {
+      document.title = `${currentQuery} - BattleDex`
+    } else {
+      document.title = "BattleDex"
+    }
+    return () => { document.title = "BattleDex" }
+  }, [currentQuery])
+
+  // Keyboard shortcut: "/" to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
+  // Wrap performSearch to also update URL
+  const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword') => {
+    router.push(`?q=${encodeURIComponent(query)}`, { scroll: false })
+    performSearch(query, mode)
+  }, [router, performSearch])
 
   useEffect(() => {
     setIsMounted(true)
@@ -55,29 +108,26 @@ export default function RapBattleApp() {
     return () => observer.disconnect()
   }, [isLoading])
 
-  // Filter to only show exact/keyword results (semantic disabled for now)
-  const exactResults = results.filter(r => r.type === 'exact')
-
   // Filter by rapper if selected
   const filteredResults = selectedRapper
-    ? exactResults.filter(r => r.rapper.name === selectedRapper)
-    : exactResults
+    ? results.filter(r => r.rapper.name === selectedRapper)
+    : results
 
   // Slice results for progressive rendering
   const displayedResults = filteredResults.slice(0, displayCount)
   const hasMore = displayCount < filteredResults.length
 
-  // Get rapper counts from exact results
+  // Get rapper counts from results
   const rapperCounts = React.useMemo(() => {
     const counts = new Map<string, number>()
-    exactResults.forEach(result => {
+    results.forEach(result => {
       const name = result.rapper.name
       counts.set(name, (counts.get(name) || 0) + 1)
     })
     return Array.from(counts.entries())
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count) // Sort by count descending
-  }, [exactResults])
+      .sort((a, b) => b.count - a.count)
+  }, [results])
 
   // Split rappers into top N and rest
   const TOP_RAPPERS_COUNT = 5
@@ -125,10 +175,11 @@ export default function RapBattleApp() {
             </p>
             <div className="pt-6">
               <SearchControls
-                onSearch={performSearch}
+                onSearch={handleSearch}
                 isLoading={isLoading}
                 value={searchQuery}
                 onValueChange={setSearchQuery}
+                inputRef={searchInputRef}
               />
               {!isLoading && currentQuery && (
                 <SimilarWords
@@ -153,15 +204,15 @@ export default function RapBattleApp() {
                       </span>
                     )}
                   </h3>
-                  {exactResults.length < totalResults && (
+                  {results.length < totalResults && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      Showing {exactResults.length} of {totalResults} results
+                      Showing {results.length} of {totalResults} results
                     </p>
                   )}
                 </div>
               </div>
 
-              {exactResults.length > 0 && (
+              {results.length > 0 && (
                 <>
 
                   {rapperCounts.length > 0 && (
@@ -221,9 +272,9 @@ export default function RapBattleApp() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 opacity-50">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-64 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
+                  <PunchlineCardSkeleton key={i} />
                 ))}
               </div>
             ) : filteredResults.length > 0 ? (

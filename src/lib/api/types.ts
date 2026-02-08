@@ -6,6 +6,7 @@
 export interface BackendSearchRequest {
   query: string
   top_k?: number
+  search_mode?: 'text' | 'semantic' | 'hybrid'
   filters?: {
     rapper_name?: string
     league_name?: string

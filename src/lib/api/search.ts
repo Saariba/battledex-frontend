@@ -25,6 +25,7 @@ export const searchService = {
     const requestBody: BackendSearchRequest = {
       query,
       top_k: topK,
+      search_mode: 'text',
       filters,
     }
 
