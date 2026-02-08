@@ -72,7 +72,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
     : result.line
 
   return (
-    <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm relative">
+    <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm relative shadow-md">
       <CardHeader className="p-4 pb-2">
         {onCorrection && (
           <button
@@ -89,7 +89,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           </button>
         )}
         <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
               {result.battle.league === 'DLTLLY' ? (
                 <img
@@ -132,7 +132,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           </div>
           <button
             onClick={() => onRapperClick?.(result.rapper.name)}
-            className="text-sm font-bold text-primary uppercase tracking-wide hover:text-primary/80 transition-colors cursor-pointer"
+            className="text-sm font-bold text-primary uppercase tracking-wide hover:text-primary/80 hover:bg-primary/10 transition-all duration-300 cursor-pointer px-2 py-0.5 rounded"
           >
             {result.rapper.name}
           </button>
@@ -166,12 +166,12 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
         )}
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2 bg-black/20">
+      <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowContext(!showContext)}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground hover:text-foreground transition-all duration-300"
         >
           {showContext ? (
             <>Hide Context <ChevronUp className="ml-1 w-3 h-3" /></>
@@ -182,7 +182,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
         <ShareButton result={result} />
         <Button
           size="sm"
-          className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all hover:scale-105"
+          className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all duration-300 hover:scale-105"
           onClick={() => onPlayVideo(result)}
         >
           <Play className="mr-1.5 w-3.5 h-3.5 fill-current" />

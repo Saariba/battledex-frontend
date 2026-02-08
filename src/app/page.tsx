@@ -7,19 +7,20 @@ import { SimilarWords } from "@/components/similar-words"
 import { PunchlineCard } from "@/components/punchline-card"
 import { VideoModal } from "@/components/video-modal"
 import { CorrectionModal } from "@/components/correction-modal"
+import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
-import { Search, Swords } from "lucide-react"
+import { Search, Swords, BarChart3 } from "lucide-react"
 
 export default function RapBattleApp() {
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
-  const [displayCount, setDisplayCount] = useState(20) // Number of results to display
+  const [displayCount, setDisplayCount] = useState(25) // Number of results to display
   const [searchQuery, setSearchQuery] = useState("")
   const loadMoreRef = React.useRef<HTMLDivElement>(null)
-  const { isLoading, results, similarWords, currentQuery, performSearch } = useSearch()
+  const { isLoading, results, totalResults, similarWords, currentQuery, performSearch } = useSearch()
 
   const handleSimilarWordClick = (word: string) => {
     setSearchQuery(word)
@@ -33,7 +34,7 @@ export default function RapBattleApp() {
   // Reset rapper filter when new results come in
   useEffect(() => {
     setSelectedRapper(null)
-    setDisplayCount(20) // Reset display count on new search
+    setDisplayCount(25) // Reset display count on new search
   }, [results])
 
   // Infinite scroll: load more results when scrolling near bottom
@@ -41,7 +42,7 @@ export default function RapBattleApp() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !isLoading) {
-          setDisplayCount(prev => prev + 20)
+          setDisplayCount(prev => prev + 25)
         }
       },
       { threshold: 0.1 }
@@ -78,6 +79,11 @@ export default function RapBattleApp() {
       .sort((a, b) => b.count - a.count) // Sort by count descending
   }, [exactResults])
 
+  // Split rappers into top N and rest
+  const TOP_RAPPERS_COUNT = 5
+  const topRappers = rapperCounts.slice(0, TOP_RAPPERS_COUNT)
+  const remainingRappers = rapperCounts.slice(TOP_RAPPERS_COUNT)
+
   if (!isMounted) return null
 
   return (
@@ -90,13 +96,20 @@ export default function RapBattleApp() {
             className="h-12 w-auto object-contain"
           />
         </div>
-        <nav>
+        <nav className="flex items-center gap-4">
           <Link
             href="/battles"
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
           >
             <Swords className="w-4 h-4" />
             Browse Battles
+          </Link>
+          <Link
+            href="/stats"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" />
+            DB Stats
           </Link>
         </nav>
       </header>
@@ -128,17 +141,24 @@ export default function RapBattleApp() {
           </section>
 
           <section className="space-y-8">
-            <div className="border-b border-border/40 pb-4">
+            <div className="border-b border-border/40 pb-6 bg-card/20 rounded-t-2xl p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                  <span className="text-primary">#</span>
-                  {exactResults.length} Results Found
-                  {selectedRapper && (
-                    <span className="text-base font-normal text-muted-foreground">
-                      • Filtered by {selectedRapper}
-                    </span>
+                <div>
+                  <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
+                    <span className="text-primary">#</span>
+                    {totalResults} Results Found
+                    {selectedRapper && (
+                      <span className="text-base font-normal text-muted-foreground">
+                        • Filtered by {selectedRapper}
+                      </span>
+                    )}
+                  </h3>
+                  {exactResults.length < totalResults && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Showing {exactResults.length} of {totalResults} results
+                    </p>
                   )}
-                </h3>
+                </div>
               </div>
 
               {exactResults.length > 0 && (
@@ -159,20 +179,40 @@ export default function RapBattleApp() {
                           </button>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {rapperCounts.map(({ name, count }) => (
-                          <button
-                            key={name}
-                            onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                              selectedRapper === name
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-card/50 text-foreground hover:bg-card border border-border/30'
-                            }`}
-                          >
-                            {name} ({count})
-                          </button>
-                        ))}
+
+                      <div className="space-y-2">
+                        {/* Top rappers as buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          {topRappers.map(({ name, count }) => (
+                            <button
+                              key={name}
+                              onClick={() => setSelectedRapper(selectedRapper === name ? null : name)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                                selectedRapper === name
+                                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
+                                  : 'bg-card/50 text-foreground hover:bg-card hover:scale-102 border border-border/30'
+                              }`}
+                            >
+                              {name} ({count})
+                            </button>
+                          ))}
+
+                          {/* Dropdown for remaining rappers */}
+                          {remainingRappers.length > 0 && (
+                            <RapperFilterDropdown
+                              rappers={remainingRappers}
+                              selectedRapper={selectedRapper}
+                              onSelect={(name) => setSelectedRapper(selectedRapper === name ? null : name)}
+                            />
+                          )}
+                        </div>
+
+                        {/* Show which rapper is selected from dropdown */}
+                        {selectedRapper && !topRappers.find(r => r.name === selectedRapper) && (
+                          <div className="text-xs text-muted-foreground">
+                            Filtered by: <span className="font-semibold text-primary">{selectedRapper}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -202,11 +242,11 @@ export default function RapBattleApp() {
                 </div>
                 {hasMore && (
                   <div ref={loadMoreRef} className="py-8 text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading more results...</p>
+                    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent shadow-lg shadow-primary/20"></div>
+                    <p className="mt-3 text-sm text-muted-foreground font-medium">Loading more results...</p>
                   </div>
                 )}
-                {!hasMore && filteredResults.length > 20 && (
+                {!hasMore && filteredResults.length > 25 && (
                   <div className="py-8 text-center">
                     <p className="text-sm text-muted-foreground">
                       Showing all {filteredResults.length} results
@@ -216,8 +256,8 @@ export default function RapBattleApp() {
               </>
             ) : (
               <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
-                <div className="bg-secondary/20 p-8 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                  <Search className="w-12 h-12 text-muted-foreground" />
+                <div className="bg-secondary/20 p-8 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">
+                  <Search className="w-16 h-16 text-muted-foreground" />
                 </div>
                 <h3 className="text-2xl font-bold text-muted-foreground">No bars matched your search.</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto mt-3">

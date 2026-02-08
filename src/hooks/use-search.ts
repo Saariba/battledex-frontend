@@ -9,10 +9,12 @@ import type { SearchResult } from '@/lib/types'
 import { searchService } from '@/lib/api/search'
 import { similarWordsService } from '@/lib/api/similar-words'
 import { ApiError, type SimilarWord } from '@/lib/api/types'
+import { searchCache, similarWordsCache, generateCacheKey } from '@/lib/cache'
 
 export function useSearch() {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
+  const [totalResults, setTotalResults] = useState(0)
   const [similarWords, setSimilarWords] = useState<SimilarWord[]>([])
   const [currentQuery, setCurrentQuery] = useState('')
 
@@ -30,19 +32,53 @@ export function useSearch() {
     setCurrentQuery(query)
 
     try {
-      // Note: mode parameter is kept for UI compatibility
-      // Backend always performs hybrid search
-      // Fetching more results for infinite scroll (filtering to exact only)
-      // Fetch search results and similar words in parallel
-      const [searchResults, similarWordsData] = await Promise.all([
-        searchService.search(query, 50),
-        similarWordsService.getSimilarWords(query, 10).catch(() => ({
+      // Generate cache keys
+      const searchKey = generateCacheKey('search', query, mode)
+      const similarWordsKey = generateCacheKey('similar', query)
+
+      // Try to get from cache first
+      const cachedSearch = searchCache.get<{ results: SearchResult[], total: number }>(searchKey)
+      const cachedSimilar = similarWordsCache.get<{ query: string, similar_words: SimilarWord[] }>(similarWordsKey)
+
+      // If both cached, return immediately
+      if (cachedSearch && cachedSimilar) {
+        setResults(cachedSearch.results)
+        setTotalResults(cachedSearch.total)
+        setSimilarWords(cachedSimilar.similar_words)
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch missing data (only if not cached)
+      const promises: Promise<any>[] = []
+
+      if (!cachedSearch) {
+        promises.push(searchService.search(query, 500))
+      } else {
+        promises.push(Promise.resolve(cachedSearch))
+      }
+
+      if (!cachedSimilar) {
+        promises.push(similarWordsService.getSimilarWords(query, 10).catch(() => ({
           query,
           similar_words: []
-        }))
-      ])
+        })))
+      } else {
+        promises.push(Promise.resolve(cachedSimilar))
+      }
 
-      setResults(searchResults)
+      const [searchResults, similarWordsData] = await Promise.all(promises)
+
+      // Cache the results (only if they weren't cached before)
+      if (!cachedSearch) {
+        searchCache.set(searchKey, searchResults)
+      }
+      if (!cachedSimilar) {
+        similarWordsCache.set(similarWordsKey, similarWordsData)
+      }
+
+      setResults(searchResults.results)
+      setTotalResults(searchResults.total)
       setSimilarWords(similarWordsData.similar_words)
 
       if (searchResults.length === 0) {
@@ -75,6 +111,7 @@ export function useSearch() {
 
       // Clear results and similar words on error
       setResults([])
+      setTotalResults(0)
       setSimilarWords([])
     } finally {
       setIsLoading(false)
@@ -84,6 +121,7 @@ export function useSearch() {
   return {
     isLoading,
     results,
+    totalResults,
     similarWords,
     currentQuery,
     performSearch,

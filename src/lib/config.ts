@@ -11,6 +11,7 @@ export const config = {
     battles: '/api/v1/battles',
     rappers: '/api/v1/rappers',
     corrections: '/api/v1/corrections',
+    stats: '/api/v1/stats',
   },
 } as const
 

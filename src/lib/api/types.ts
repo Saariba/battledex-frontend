@@ -31,6 +31,7 @@ export interface BackendSearchResultItem {
 export interface BackendSearchResponse {
   query: string
   total: number
+  total_text_matches: number
   results: BackendSearchResultItem[]
 }
 

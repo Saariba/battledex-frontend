@@ -17,7 +17,7 @@ export function SimilarWords({ words, onWordClick, isLoading }: SimilarWordsProp
         <button
           key={word}
           onClick={() => onWordClick(word)}
-          className="px-2 py-1 rounded text-xs font-medium transition-all bg-card/50 text-muted-foreground hover:bg-primary hover:text-primary-foreground border border-border/30"
+          className="px-2 py-1 rounded text-xs font-medium transition-all duration-300 bg-card/50 text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 border border-border/30"
         >
           {word} <span className="opacity-50">({count})</span>
         </button>

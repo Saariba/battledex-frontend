@@ -8,8 +8,9 @@ import { extractYouTubeId } from '@/lib/api/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Play, Swords } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Swords, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
+import { battlesCache, generateCacheKey } from '@/lib/cache'
 
 const BATTLES_PER_PAGE = 20
 
@@ -33,26 +34,45 @@ export default function BattlesPage() {
     try {
       setIsLoading(true)
       const offset = (currentPage - 1) * BATTLES_PER_PAGE
+
+      // Try cache first
+      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset)
+      const cached = battlesCache.get<{ battles: Battle[], total: number }>(cacheKey)
+
+      if (cached) {
+        setBattles(cached.battles)
+        setTotal(cached.total)
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch if not cached
       const response = await battlesService.listBattles(BATTLES_PER_PAGE, offset)
 
       // Debug: Log the response to see its structure
       console.log('Battles API Response:', response)
 
       const battlesList = response.battles || []
-      setBattles(battlesList)
+      let totalCount = 0
 
       // If API provides total, use it. Otherwise, estimate based on results
       if (response.total !== undefined) {
-        setTotal(response.total)
+        totalCount = response.total
       } else {
         // If we got a full page, assume there might be more
         // This is a fallback for APIs that don't return total count
         if (battlesList.length === BATTLES_PER_PAGE) {
-          setTotal((currentPage * BATTLES_PER_PAGE) + 1) // At least one more page
+          totalCount = (currentPage * BATTLES_PER_PAGE) + 1 // At least one more page
         } else {
-          setTotal((currentPage - 1) * BATTLES_PER_PAGE + battlesList.length)
+          totalCount = (currentPage - 1) * BATTLES_PER_PAGE + battlesList.length
         }
       }
+
+      // Cache the result
+      battlesCache.set(cacheKey, { battles: battlesList, total: totalCount })
+
+      setBattles(battlesList)
+      setTotal(totalCount)
     } catch (error) {
       console.error('Failed to load battles:', error)
       toast.error('Failed to load battles. Please try again.')
@@ -84,7 +104,7 @@ export default function BattlesPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <header className="h-20 flex items-center px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
+      <header className="h-20 flex items-center justify-between px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Link href="/">
             <img
@@ -94,6 +114,22 @@ export default function BattlesPage() {
             />
           </Link>
         </div>
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/battles"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary transition-colors"
+          >
+            <Swords className="w-4 h-4" />
+            Browse Battles
+          </Link>
+          <Link
+            href="/stats"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" />
+            DB Stats
+          </Link>
+        </nav>
       </header>
 
       {/* Main Content */}
@@ -149,7 +185,7 @@ export default function BattlesPage() {
                   size="lg"
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className="gap-2"
+                  className="gap-2 transition-all duration-300"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Previous
@@ -178,7 +214,9 @@ export default function BattlesPage() {
                           setCurrentPage(pageNum)
                           window.scrollTo({ top: 0, behavior: 'smooth' })
                         }}
-                        className="w-10"
+                        className={`w-10 transition-all duration-300 ${
+                          currentPage === pageNum ? 'shadow-lg shadow-primary/30 scale-110' : ''
+                        }`}
                       >
                         {pageNum}
                       </Button>
@@ -191,7 +229,7 @@ export default function BattlesPage() {
                   size="lg"
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className="gap-2"
+                  className="gap-2 transition-all duration-300"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -227,7 +265,7 @@ function BattleCard({ battle }: BattleCardProps) {
     : null
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 group">
+    <Card className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 group shadow-md">
       <CardHeader className="p-0">
         {/* Thumbnail */}
         {battle.youtubeUrl ? (
@@ -249,8 +287,8 @@ function BattleCard({ battle }: BattleCardProps) {
               </div>
             )}
             {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <Play className="w-12 h-12 text-white" />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+              <Play className="w-16 h-16 text-white drop-shadow-lg" />
             </div>
           </a>
         ) : (

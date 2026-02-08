@@ -12,6 +12,7 @@ import { transcriptService } from "@/lib/api/transcripts"
 import { KaraokeLyrics } from "./karaoke-lyrics"
 import { toast } from "@/hooks/use-toast"
 import type { TranscriptLine } from "@/lib/api/types"
+import { transcriptCache, generateCacheKey } from "@/lib/cache"
 
 interface VideoModalProps {
   result: SearchResult | null
@@ -84,10 +85,23 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
   // Fetch transcript when modal opens
   React.useEffect(() => {
     if (result.battleId) {
+      // Try cache first
+      const cacheKey = generateCacheKey('transcript', result.battleId)
+      const cached = transcriptCache.get<TranscriptLine[]>(cacheKey)
+
+      if (cached) {
+        setTranscript(cached)
+        return
+      }
+
+      // Fetch if not cached
       setIsLoadingTranscript(true)
       transcriptService
         .getTranscript(result.battleId)
-        .then(setTranscript)
+        .then((data) => {
+          transcriptCache.set(cacheKey, data) // Cache the result
+          setTranscript(data)
+        })
         .catch((err) => {
           console.error('Failed to load transcript:', err)
           toast({
@@ -106,7 +120,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl w-[95vw] sm:w-full bg-background border-primary/20 p-0 overflow-hidden">
-        <DialogHeader className="p-3 sm:p-4 bg-card/50 relative">
+        <DialogHeader className="p-4 sm:p-6 bg-card/50 relative">
           {onCorrection && (
             <button
               onClick={() => onCorrection(result)}
@@ -145,14 +159,14 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
         </div>
 
         {/* Rewind button directly under video */}
-        <div className="px-4 pt-3 pb-2 bg-card/30 border-b border-border/20">
+        <div className="px-4 sm:px-6 pt-3 pb-2 bg-card/30 border-b border-border/20">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => player?.seekTo(result.timestamp, true)}
               disabled={!isReady}
-              className="gap-1.5 h-8 text-xs"
+              className="gap-1.5 h-8 text-xs transition-all duration-300"
             >
               <RotateCcw className="w-3 h-3" />
               Rewind to Line
