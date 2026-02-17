@@ -46,7 +46,10 @@ Expected response:
 
 ### CORS
 
-The API allows all origins (`*`) for development. All standard HTTP methods and headers are permitted.
+The API allows configured origins from server settings (`cors_origins`).
+Default local origins are:
+- `http://localhost:9002`
+- `http://localhost:3000`
 
 ---
 
@@ -77,7 +80,8 @@ The API allows all origins (`*`) for development. All standard HTTP methods and 
 
 ### `POST /api/v1/search`
 
-**The primary endpoint.** Performs hybrid search (semantic AI + keyword matching) across all punchlines.
+**The primary endpoint.** Supports `search_mode` values `text`, `semantic`, and `hybrid` (default: `text`).
+In the current frontend flow, semantic searches are sent as `hybrid` for better relevance.
 
 ### Request
 
@@ -220,7 +224,10 @@ GET /api/v1/battles?limit=20&offset=0
       "created_at": "2025-01-31T15:25:00.000Z"
     }
   ],
-  "count": 2
+  "count": 2,
+  "total": 572,
+  "limit": 20,
+  "offset": 0
 }
 ```
 
@@ -647,6 +654,9 @@ interface Battle {
 interface BattlesResponse {
   battles: Battle[];
   count: number;
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 // ============================================
