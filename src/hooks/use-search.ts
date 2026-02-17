@@ -55,7 +55,7 @@ export function useSearch() {
       }
 
       // Fetch search results first (critical path)
-      const searchResults = cachedSearch || await searchService.search(query, 100, filterObj)
+      const searchResults = cachedSearch || await searchService.search(query, 100, mode, filterObj)
 
       if (!cachedSearch) {
         searchCache.set(searchKey, searchResults)

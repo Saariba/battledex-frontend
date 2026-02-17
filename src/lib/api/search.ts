@@ -20,12 +20,15 @@ export const searchService = {
   async search(
     query: string,
     topK: number = 20,
+    mode: 'semantic' | 'keyword' = 'semantic',
     filters?: { rapper_name?: string }
   ): Promise<{ results: SearchResult[], total: number, rapperCounts: Record<string, number> }> {
+    const backendSearchMode = mode === 'keyword' ? 'text' : 'hybrid'
+
     const requestBody: BackendSearchRequest = {
       query,
       top_k: topK,
-      search_mode: 'text',
+      search_mode: backendSearchMode,
       filters,
     }
 
