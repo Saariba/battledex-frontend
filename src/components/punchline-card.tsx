@@ -25,42 +25,48 @@ interface PunchlineCardProps {
 function highlightKeywords(text: string, query: string): React.ReactNode {
   if (!query || !text) return text
 
-  // Split query into individual words
-  const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 0)
+  const queryWords = query
+    .toLocaleLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
 
-  // Create regex pattern for fuzzy matching (find words that contain the query)
-  const pattern = queryWords.map(word =>
-    word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
-  ).join('|')
+  if (queryWords.length === 0) return text
 
-  const regex = new RegExp(`\\b(\\w*(?:${pattern})\\w*)\\b`, 'gi')
+  const regex = /[\p{L}\p{N}_]+/gu
 
   const parts: React.ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
+  let didHighlight = false
 
   while ((match = regex.exec(text)) !== null) {
-    // Add text before match
     if (match.index > lastIndex) {
       parts.push(text.substring(lastIndex, match.index))
     }
 
-    // Add highlighted match
-    parts.push(
-      <span key={match.index} className="text-yellow-500 font-bold">
-        {match[0]}
-      </span>
-    )
+    const token = match[0]
+    const tokenLower = token.toLocaleLowerCase()
+    const shouldHighlight = queryWords.some((word) => tokenLower.includes(word))
 
-    lastIndex = match.index + match[0].length
+    if (shouldHighlight) {
+      parts.push(
+        <span key={match.index} className="text-yellow-500 font-bold">
+          {token}
+        </span>
+      )
+      didHighlight = true
+    } else {
+      parts.push(token)
+    }
+
+    lastIndex = match.index + token.length
   }
 
-  // Add remaining text
   if (lastIndex < text.length) {
     parts.push(text.substring(lastIndex))
   }
 
-  return parts.length > 0 ? parts : text
+  return didHighlight ? parts : text
 }
 
 export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick, onCorrection }: PunchlineCardProps) {

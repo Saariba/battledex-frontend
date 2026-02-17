@@ -9,15 +9,27 @@
  * - Brackets [] = core line
  */
 export function parseContextFromText(text: string): string[] {
-  const lines: string[] = []
-  const regex = /[\(\[]([^\)\]]+)[\)\]]: ([^\.]+\.?)/g
-  let match
+  const markerRegex = /[\(\[]([^\)\]]+)[\)\]]:\s*/g
+  const markers: Array<{ start: number; contentStart: number }> = []
+  let match: RegExpExecArray | null
 
-  while ((match = regex.exec(text)) !== null) {
-    const lineText = match[2].trim()
-    if (lineText) {
-      lines.push(lineText)
-    }
+  while ((match = markerRegex.exec(text)) !== null) {
+    markers.push({
+      start: match.index,
+      contentStart: markerRegex.lastIndex,
+    })
+  }
+
+  if (markers.length === 0) {
+    return [text]
+  }
+
+  const lines: string[] = []
+  for (let i = 0; i < markers.length; i++) {
+    const start = markers[i].contentStart
+    const end = i + 1 < markers.length ? markers[i + 1].start : text.length
+    const line = text.slice(start, end).trim()
+    if (line) lines.push(line)
   }
 
   return lines.length > 0 ? lines : [text]
