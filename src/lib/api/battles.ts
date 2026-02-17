@@ -13,14 +13,16 @@ interface BackendBattle {
   title: string
   league?: string
   video_url: string
+  event_date?: string
   date?: string
 }
 
 interface BackendBattlesResponse {
   battles: BackendBattle[]
-  total: number
-  limit: number
-  offset: number
+  total?: number
+  limit?: number
+  offset?: number
+  count?: number
 }
 
 export interface BattlesResponse {
@@ -37,7 +39,7 @@ function adaptBattle(backendBattle: BackendBattle): Battle {
     league: backendBattle.league || extractLeague(backendBattle.title),
     youtubeUrl: backendBattle.video_url,
     thumbnailUrl: extractYouTubeThumbnail(backendBattle.video_url),
-    date: backendBattle.date,
+    date: backendBattle.event_date || backendBattle.date,
   }
 }
 
@@ -60,9 +62,9 @@ export const battlesService = {
 
     return {
       battles: response.battles.map(adaptBattle),
-      total: response.total,
-      limit: response.limit,
-      offset: response.offset,
+      total: response.total ?? response.count ?? response.battles.length,
+      limit: response.limit ?? limit,
+      offset: response.offset ?? offset,
     }
   },
 }

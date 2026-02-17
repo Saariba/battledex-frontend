@@ -53,20 +53,7 @@ export default function BattlesPage() {
       console.log('Battles API Response:', response)
 
       const battlesList = response.battles || []
-      let totalCount = 0
-
-      // If API provides total, use it. Otherwise, estimate based on results
-      if (response.total !== undefined) {
-        totalCount = response.total
-      } else {
-        // If we got a full page, assume there might be more
-        // This is a fallback for APIs that don't return total count
-        if (battlesList.length === BATTLES_PER_PAGE) {
-          totalCount = (currentPage * BATTLES_PER_PAGE) + 1 // At least one more page
-        } else {
-          totalCount = (currentPage - 1) * BATTLES_PER_PAGE + battlesList.length
-        }
-      }
+      const totalCount = response.total
 
       // Cache the result
       battlesCache.set(cacheKey, { battles: battlesList, total: totalCount })
