@@ -26,7 +26,8 @@ export function adaptBackendResults(
  */
 function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
   // Use UUID from backend or fallback to generated ID
-  const battleId = item.battle_id || generateId('battle', item.battle_title)
+  const battleUuid = item.battle_id
+  const battleId = battleUuid || generateId('battle', item.battle_title)
   const battleIdSlug = generateId('battle', item.battle_title)
   const rapperId = item.rapper ? generateId('rapper', item.rapper) : 'rapper-unknown'
   const lineNumber = item.line_number ?? Math.floor(item.timestamp)
@@ -47,6 +48,7 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
   return {
     id: resultId,
     battleId,
+    battleUuid,
     battleIdSlug,
     rapperId,
     line: item.core_text || contextLines[0] || item.text,

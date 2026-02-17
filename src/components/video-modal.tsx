@@ -67,6 +67,9 @@ export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: 
 function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: VideoModalProps & { result: SearchResult }) {
   const [transcript, setTranscript] = React.useState<TranscriptLine[]>([])
   const [isLoadingTranscript, setIsLoadingTranscript] = React.useState(false)
+  const transcriptBattleId = result.battleUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result.battleUuid)
+    ? result.battleUuid
+    : null
 
   // Extract video ID from youtube URL
   const videoId = result.battle.youtubeUrl.includes('v=')
@@ -84,9 +87,9 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
 
   // Fetch transcript when modal opens
   React.useEffect(() => {
-    if (result.battleId) {
+    if (transcriptBattleId) {
       // Try cache first
-      const cacheKey = generateCacheKey('transcript', result.battleId)
+      const cacheKey = generateCacheKey('transcript', transcriptBattleId)
       const cached = transcriptCache.get<TranscriptLine[]>(cacheKey)
 
       if (cached) {
@@ -97,7 +100,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
       // Fetch if not cached
       setIsLoadingTranscript(true)
       transcriptService
-        .getTranscript(result.battleId)
+        .getTranscript(transcriptBattleId)
         .then((data) => {
           transcriptCache.set(cacheKey, data) // Cache the result
           setTranscript(data)
@@ -112,7 +115,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
         })
         .finally(() => setIsLoadingTranscript(false))
     }
-  }, [result.battleId])
+  }, [transcriptBattleId])
 
   const shouldHighlight = result.type === 'exact'
   const displayLine = shouldHighlight ? highlightKeywords(result.line, searchQuery) : result.line
@@ -199,6 +202,12 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
             <div className="text-center py-6 sm:py-8 border-t border-border/30 pt-4 sm:pt-6">
               <div className="animate-pulse text-sm text-muted-foreground">
                 Loading lyrics...
+              </div>
+            </div>
+          ) : !transcriptBattleId ? (
+            <div className="text-center py-6 sm:py-8 border-t border-border/30 pt-4 sm:pt-6">
+              <div className="text-sm text-muted-foreground">
+                Lyrics are unavailable for this result.
               </div>
             </div>
           ) : null}

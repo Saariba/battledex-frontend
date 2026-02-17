@@ -17,6 +17,7 @@ export interface Battle {
 export interface Punchline {
   id: string;
   battleId: string; // UUID from backend
+  battleUuid?: string; // Canonical backend UUID when available
   battleIdSlug?: string; // Generated slug for routing (optional)
   rapperId: string;
   line: string;
