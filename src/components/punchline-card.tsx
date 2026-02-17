@@ -119,10 +119,16 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
                   "text-[10px] font-code",
                   result.type === 'exact'
                     ? "bg-accent text-accent-foreground"
+                    : result.type === 'random'
+                    ? "border-emerald-500/50 text-emerald-400"
                     : "border-purple-500/50 text-purple-400"
                 )}
               >
-                {result.type === 'exact' ? '🔍 Keyword' : '🧠 Semantic'}
+                {result.type === 'exact'
+                  ? '🔍 Keyword'
+                  : result.type === 'random'
+                  ? '🎲 Random'
+                  : '🧠 Semantic'}
               </Badge>
             )}
             {result.score && (

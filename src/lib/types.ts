@@ -23,7 +23,7 @@ export interface Punchline {
   context: string[];
   timestamp: number; // in seconds
   score?: number;
-  type?: 'semantic' | 'exact'; // Match type from backend
+  type?: 'semantic' | 'exact' | 'random'; // Match type from backend
   line_number?: number; // Line number in transcript (for corrections)
 }
 

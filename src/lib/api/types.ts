@@ -27,7 +27,7 @@ export interface BackendSearchResultItem {
   line_number?: number
   youtube_timestamp_link: string
   score: number
-  type: 'semantic' | 'exact'
+  type: 'semantic' | 'exact' | 'random'
 }
 
 export interface BackendSearchResponse {
