@@ -156,7 +156,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
             <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary flex-shrink-0">
               {result.battle.league === 'DLTLLY' ? (
                 <img
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSXFzUaStqCCDaBO5wh6nUz6bp7IfaLAUO3Q&s"
+                  src="/league-dltlly.svg"
                   alt="DLTLLY"
                   className="w-3 h-3 mr-1 object-contain"
                 />
