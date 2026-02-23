@@ -12,7 +12,9 @@ import { CorrectionModal } from "@/components/correction-modal"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
-import { Search, ExternalLink } from "lucide-react"
+import { searchService } from "@/lib/api/search"
+import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function RapBattleApp() {
   return (
@@ -35,6 +37,28 @@ function RapBattleAppInner() {
   const searchParams = useSearchParams()
   const { isLoading, results, totalResults, rapperCounts: backendRapperCounts, similarWords, currentQuery, performSearch } = useSearch()
   const hasRunInitialSearch = useRef(false)
+  const [featuredBars, setFeaturedBars] = useState<SearchResult[]>([])
+  const [featuredLoading, setFeaturedLoading] = useState(true)
+  const [isShuffling, setIsShuffling] = useState(false)
+  const [popularQueries, setPopularQueries] = useState<{ query: string, count: number }[]>([])
+
+  const loadFeaturedBars = useCallback(async () => {
+    try {
+      setIsShuffling(true)
+      const lines = await searchService.getRandomLines(5)
+      setFeaturedBars(lines)
+    } catch {
+      // Silently fail - featured bars are non-critical
+    } finally {
+      setFeaturedLoading(false)
+      setIsShuffling(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadFeaturedBars()
+    searchService.getPopularQueries(8).then(setPopularQueries).catch(() => {})
+  }, [])
 
   const handleSimilarWordClick = (word: string) => {
     setSearchQuery(word)
@@ -160,8 +184,70 @@ function RapBattleAppInner() {
                   isLoading={isLoading}
                 />
               )}
+              {!currentQuery && !isLoading && popularQueries.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Trending
+                  </span>
+                  {popularQueries.map(({ query }) => (
+                    <button
+                      key={query}
+                      onClick={() => {
+                        setSearchQuery(query)
+                        handleSearch(query, 'semantic')
+                      }}
+                      className="px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200"
+                    >
+                      {query}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
+
+          {/* Featured Bars - show when no search active */}
+          {!currentQuery && !isLoading && (
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Featured Bars
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadFeaturedBars}
+                  disabled={isShuffling}
+                  className="gap-2"
+                >
+                  <Shuffle className={`w-4 h-4 ${isShuffling ? 'animate-spin' : ''}`} />
+                  Shuffle
+                </Button>
+              </div>
+              {featuredLoading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {[1, 2, 3, 4].map(i => (
+                    <PunchlineCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {featuredBars.map((result) => (
+                    <PunchlineCard
+                      key={result.id}
+                      result={result}
+                      searchQuery=""
+                      onPlayVideo={setSelectedVideo}
+                      onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
+                      onCorrection={(result) => setCorrectionResult(result)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {(currentQuery || isLoading) && (
           <section className="space-y-8">

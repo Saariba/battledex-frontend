@@ -33,6 +33,8 @@ export function useSearch() {
     setIsLoading(true)
     setCurrentQuery(query)
 
+    const startTime = performance.now()
+
     try {
       const filterObj = rapperFilter ? { rapper_name: rapperFilter } : undefined
 
@@ -56,6 +58,15 @@ export function useSearch() {
 
       // Fetch search results first (critical path)
       const searchResults = cachedSearch || await searchService.search(query, 100, mode, filterObj)
+
+      // Fire-and-forget analytics logging
+      const responseTimeMs = Math.round(performance.now() - startTime)
+      searchService.logSearchEvent({
+        query,
+        search_mode: mode,
+        result_count: searchResults.total,
+        response_time_ms: responseTimeMs,
+      })
 
       if (!cachedSearch) {
         searchCache.set(searchKey, searchResults)

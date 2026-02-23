@@ -8,7 +8,8 @@ import { extractYouTubeId } from '@/lib/api/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mic2, Play, Swords, FileText, Search } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Mic2, Play, Swords, FileText, Search, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function RapperProfilePage() {
@@ -27,6 +28,13 @@ export default function RapperProfilePage() {
     loadProfile()
   }, [isMounted, rapperName])
 
+  useEffect(() => {
+    if (profile) {
+      document.title = `${profile.name} - BattleDex`
+    }
+    return () => { document.title = 'BattleDex' }
+  }, [profile])
+
   const loadProfile = async () => {
     try {
       setIsLoading(true)
@@ -42,30 +50,23 @@ export default function RapperProfilePage() {
 
   if (!isMounted) return null
 
+  const avgLinesPerBattle = profile && profile.totalBattles > 0
+    ? Math.round(profile.totalLines / profile.totalBattles)
+    : 0
+
   return (
     <main className="flex-1 overflow-y-auto p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-8">
-        <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-          &larr; Back to Search
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Search
         </Link>
 
         {isLoading ? (
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="h-12 w-64 rounded-lg bg-card/50 animate-pulse" />
-              <div className="h-6 w-48 rounded bg-card/50 animate-pulse" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-32 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-80 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
-              ))}
-            </div>
-          </div>
+          <RapperProfileSkeleton />
         ) : profile ? (
           <>
             {/* Profile Header */}
@@ -88,9 +89,9 @@ export default function RapperProfilePage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6 flex items-center gap-4">
+                <CardContent className="p-5 flex items-center gap-4">
                   <div className="bg-primary/10 p-3 rounded-xl">
                     <Swords className="w-6 h-6 text-primary" />
                   </div>
@@ -103,7 +104,7 @@ export default function RapperProfilePage() {
                 </CardContent>
               </Card>
               <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6 flex items-center gap-4">
+                <CardContent className="p-5 flex items-center gap-4">
                   <div className="bg-green-500/10 p-3 rounded-xl">
                     <FileText className="w-6 h-6 text-green-500" />
                   </div>
@@ -116,14 +117,27 @@ export default function RapperProfilePage() {
                 </CardContent>
               </Card>
               <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6 flex items-center gap-4">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="bg-purple-500/10 p-3 rounded-xl">
+                    <FileText className="w-6 h-6 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-black font-headline text-purple-500">
+                      ~{avgLinesPerBattle}
+                    </p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Lines / Battle</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-5 flex items-center gap-3">
                   <div className="bg-blue-500/10 p-3 rounded-xl">
                     <Search className="w-6 h-6 text-blue-500" />
                   </div>
                   <Link href={`/?q=${encodeURIComponent(profile.name)}`}>
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" size="sm" className="gap-2">
                       <Search className="w-4 h-4" />
-                      Search their bars
+                      Search bars
                     </Button>
                   </Link>
                 </CardContent>
@@ -135,6 +149,9 @@ export default function RapperProfilePage() {
               <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
                 <span className="text-primary">#</span>
                 Battle History
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({profile.battles.length})
+                </span>
               </h2>
               {profile.battles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -143,7 +160,10 @@ export default function RapperProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">No battles found.</p>
+                <div className="text-center py-16 bg-card/20 rounded-3xl border border-dashed border-border/40">
+                  <Swords className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground">No battles found for this rapper.</p>
+                </div>
               )}
             </div>
           </>
@@ -154,10 +174,57 @@ export default function RapperProfilePage() {
             <p className="text-muted-foreground mt-2">
               Could not find a profile for &ldquo;{rapperName}&rdquo;
             </p>
+            <Link href="/" className="mt-6 inline-block">
+              <Button variant="outline" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Search
+              </Button>
+            </Link>
           </div>
         )}
       </div>
     </main>
+  )
+}
+
+function RapperProfileSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center gap-4">
+        <Skeleton className="w-[72px] h-[72px] rounded-2xl" />
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <Card key={i} className="border-border/20 bg-card/30">
+            <CardContent className="p-5 flex items-center gap-4">
+              <Skeleton className="w-12 h-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="border-border/20 bg-card/30">
+              <Skeleton className="aspect-video w-full" />
+              <CardContent className="p-4 space-y-3">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-6 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 

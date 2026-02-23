@@ -7,15 +7,11 @@ import type { SearchResult } from '@/lib/types'
 import { config } from '@/lib/config'
 import { apiRequest } from './client'
 import { adaptBackendResults } from './adapter'
-import type { BackendSearchRequest, BackendSearchResponse } from './types'
+import type { BackendSearchRequest, BackendSearchResponse, BackendSearchResultItem } from './types'
 
 export const searchService = {
   /**
    * Perform a search query
-   * @param query - Search query string
-   * @param topK - Number of results to return (default: 20)
-   * @param filters - Optional filters for rapper name, league, etc.
-   * @returns Array of search results
    */
   async search(
     query: string,
@@ -45,5 +41,52 @@ export const searchService = {
       total: response.total_text_matches,
       rapperCounts: response.rapper_counts || {},
     }
+  },
+
+  /**
+   * Fetch random punchlines for homepage showcase
+   */
+  async getRandomLines(count: number = 5): Promise<SearchResult[]> {
+    const response = await apiRequest<{ lines: BackendSearchResultItem[], count: number }>(
+      `${config.endpoints.randomLines}?count=${count}`
+    )
+    return adaptBackendResults(response.lines)
+  },
+
+  /**
+   * Fetch autocomplete suggestions
+   */
+  async autocomplete(query: string): Promise<string[]> {
+    const response = await apiRequest<{ suggestions: string[], query: string }>(
+      `${config.endpoints.autocomplete}?q=${encodeURIComponent(query)}`
+    )
+    return response.suggestions
+  },
+
+  /**
+   * Log a search event (fire-and-forget)
+   */
+  logSearchEvent(data: {
+    query: string
+    search_mode: string
+    result_count: number
+    response_time_ms: number
+  }): void {
+    apiRequest(config.endpoints.analyticsSearch, {
+      method: 'POST',
+      body: data,
+    }).catch(() => {
+      // Silently ignore analytics errors
+    })
+  },
+
+  /**
+   * Fetch popular/trending queries
+   */
+  async getPopularQueries(limit: number = 8): Promise<{ query: string, count: number }[]> {
+    const response = await apiRequest<{ queries: { query: string, count: number }[], total: number }>(
+      `${config.endpoints.analyticsPopular}?limit=${limit}`
+    )
+    return response.queries
   },
 }
