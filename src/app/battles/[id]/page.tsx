@@ -82,13 +82,36 @@ export default function BattleDetailPage() {
     }
   }
 
+  // Use battle.rappers for deterministic color ordering, fall back to transcript order
   const speakerColorMap = useMemo(() => {
     const map = new Map<string, number>()
-    const speakers = [...new Set(transcripts.map(t => t.speakerLabel).filter(Boolean))]
-    speakers.forEach((speaker, i) => {
-      if (speaker) map.set(speaker, i % SPEAKER_COLORS.length)
+    if (battle?.rappers) {
+      battle.rappers.forEach((r, i) => {
+        map.set(r.name, i % SPEAKER_COLORS.length)
+      })
+    }
+    // Pick up any speakers from transcripts not in the rappers array
+    const transcriptSpeakers = [...new Set(transcripts.map(t => t.speakerLabel).filter(Boolean))]
+    transcriptSpeakers.forEach((speaker) => {
+      if (speaker && !map.has(speaker)) {
+        map.set(speaker, map.size % SPEAKER_COLORS.length)
+      }
     })
     return map
+  }, [battle, transcripts])
+
+  // Group consecutive lines by the same speaker into segments
+  const segments = useMemo(() => {
+    const result: { speaker: string | undefined; lines: TranscriptLine[] }[] = []
+    for (const line of transcripts) {
+      const lastSegment = result[result.length - 1]
+      if (lastSegment && lastSegment.speaker === line.speakerLabel) {
+        lastSegment.lines.push(line)
+      } else {
+        result.push({ speaker: line.speakerLabel, lines: [line] })
+      }
+    }
+    return result
   }, [transcripts])
 
   if (!isMounted) return null

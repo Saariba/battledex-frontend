@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Mic2, Play, Swords, FileText, Search, ArrowLeft } from 'lucide-react'
+import { Mic2, Play, Swords, FileText, Search, ArrowLeft, ScrollText } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function RapperProfilePage() {
@@ -269,32 +269,60 @@ function RapperBattleCard({ battle }: { battle: RapperBattle }) {
       </CardHeader>
 
       <CardContent className="p-4 space-y-3">
-        {battle.date && (
-          <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
-            {new Date(battle.date).getFullYear()}
-          </Badge>
+        <div className="flex items-center gap-2 flex-wrap">
+          {battle.date && (
+            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
+              {new Date(battle.date).getFullYear()}
+            </Badge>
+          )}
+          {battle.lineCount > 0 && (
+            <Badge variant="outline" className="text-[10px] font-code border-green-500/30 text-green-500">
+              <ScrollText className="w-3 h-3 mr-1" />
+              {battle.lineCount} lines
+            </Badge>
+          )}
+        </div>
+        <Link href={`/battles/${battle.id}`}>
+          <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors cursor-pointer">
+            {battle.title}
+          </h3>
+        </Link>
+        {battle.opponentNames.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            vs.{' '}
+            {battle.opponentNames.map((name, i) => (
+              <React.Fragment key={name}>
+                {i > 0 && ', '}
+                <Link
+                  href={`/rappers/${encodeURIComponent(name)}`}
+                  className="text-primary/80 hover:text-primary hover:underline transition-colors"
+                >
+                  {name}
+                </Link>
+              </React.Fragment>
+            ))}
+          </p>
         )}
-        <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-          {battle.title}
-        </h3>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
-        {battle.videoUrl ? (
-          <a href={battle.videoUrl} target="_blank" rel="noopener noreferrer" className="w-full">
+      <CardFooter className="p-4 pt-0 gap-2">
+        <Link href={`/battles/${battle.id}`} className="flex-1">
+          <Button variant="outline" size="sm" className="w-full">
+            <FileText className="w-4 h-4 mr-2" />
+            Details
+          </Button>
+        </Link>
+        {battle.videoUrl && (
+          <a href={battle.videoUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
             <Button
               variant="outline"
               size="sm"
               className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all"
             >
               <Play className="w-4 h-4 mr-2" />
-              Watch on YouTube
+              YouTube
             </Button>
           </a>
-        ) : (
-          <Button variant="outline" size="sm" disabled className="w-full">
-            No video available
-          </Button>
         )}
       </CardFooter>
     </Card>

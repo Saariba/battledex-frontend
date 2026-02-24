@@ -11,6 +11,8 @@ interface BackendRapperBattle {
   title: string
   video_url: string
   event_date?: string
+  opponent_names?: string[]
+  line_count?: number
 }
 
 interface BackendRapperProfile {
@@ -26,6 +28,8 @@ export interface RapperBattle {
   title: string
   videoUrl: string
   date?: string
+  opponentNames: string[]
+  lineCount: number
 }
 
 export interface RapperProfile {
@@ -47,6 +51,8 @@ function adaptRapperProfile(backend: BackendRapperProfile): RapperProfile {
       title: b.title,
       videoUrl: b.video_url,
       date: b.event_date,
+      opponentNames: b.opponent_names ?? [],
+      lineCount: b.line_count ?? 0,
     })),
   }
 }

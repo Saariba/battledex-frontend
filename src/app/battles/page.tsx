@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Play, Search, X, Swords } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Search, X, Swords, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { battlesCache, generateCacheKey } from '@/lib/cache'
 
@@ -339,18 +339,26 @@ function BattleCard({ battle }: BattleCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-          {battle.title}
-        </h3>
+        <Link href={`/battles/${battle.id}`}>
+          <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors cursor-pointer">
+            {battle.title}
+          </h3>
+        </Link>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
-        {battle.youtubeUrl ? (
+      <CardFooter className="p-4 pt-0 gap-2">
+        <Link href={`/battles/${battle.id}`} className="flex-1">
+          <Button variant="outline" size="sm" className="w-full">
+            <FileText className="w-4 h-4 mr-2" />
+            Details
+          </Button>
+        </Link>
+        {battle.youtubeUrl && (
           <a
             href={battle.youtubeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full"
+            className="flex-1"
           >
             <Button
               variant="outline"
@@ -358,18 +366,9 @@ function BattleCard({ battle }: BattleCardProps) {
               className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all"
             >
               <Play className="w-4 h-4 mr-2" />
-              Watch on YouTube
+              YouTube
             </Button>
           </a>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="w-full"
-          >
-            No video available
-          </Button>
         )}
       </CardFooter>
     </Card>
