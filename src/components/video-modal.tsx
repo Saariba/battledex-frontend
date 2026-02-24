@@ -99,6 +99,37 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
     result.timestamp
   )
 
+  // Keyboard controls for video playback
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with inputs
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return
+      if (!player || !isReady) return
+
+      switch (e.key) {
+        case ' ':
+          e.preventDefault()
+          if (isPlaying) {
+            player.pauseVideo()
+          } else {
+            player.playVideo()
+          }
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          player.seekTo(Math.max(0, player.getCurrentTime() - 5), true)
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          player.seekTo(player.getCurrentTime() + 5, true)
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [player, isReady, isPlaying])
+
   // Fetch transcript when modal opens
   React.useEffect(() => {
     if (transcriptBattleId) {
@@ -175,22 +206,29 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
           <div id={playerId} className="w-full h-full" />
         </div>
 
-        {/* Rewind button directly under video */}
+        {/* Rewind button + keyboard hints */}
         <div className="px-4 sm:px-6 pt-3 pb-2 bg-card/30 border-b border-border/20">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => player?.seekTo(result.timestamp, true)}
-              disabled={!isReady}
-              className="gap-1.5 h-8 text-xs transition-all duration-300"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Rewind to Line
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => player?.seekTo(result.timestamp, true)}
+                disabled={!isReady}
+                className="gap-1.5 h-8 text-xs transition-all duration-300"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Rewind to Line
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted-foreground/60">
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Space</kbd> play/pause</span>
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">←→</kbd> seek 5s</span>
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Esc</kbd> close</span>
+            </div>
           </div>
         </div>
 

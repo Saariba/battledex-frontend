@@ -1,14 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { battlesService } from '@/lib/api/battles'
 import type { Battle } from '@/lib/types'
 import { extractYouTubeId } from '@/lib/api/utils'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Play, Swords } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Search, X, Swords } from 'lucide-react'
 import { toast } from 'sonner'
 import { battlesCache, generateCacheKey } from '@/lib/cache'
 
@@ -20,15 +21,38 @@ export default function BattlesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setSearchQuery(searchInput)
+      setCurrentPage(1)
+    }, 400)
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [searchInput])
+
   useEffect(() => {
     if (!isMounted) return
     loadBattles()
-  }, [currentPage, isMounted])
+  }, [currentPage, searchQuery, isMounted])
+
+  const clearSearch = useCallback(() => {
+    setSearchInput('')
+    setSearchQuery('')
+    setCurrentPage(1)
+  }, [])
 
   const loadBattles = async () => {
     try {
@@ -36,7 +60,7 @@ export default function BattlesPage() {
       const offset = (currentPage - 1) * BATTLES_PER_PAGE
 
       // Try cache first
-      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset)
+      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset, searchQuery)
       const cached = battlesCache.get<{ battles: Battle[], total: number }>(cacheKey)
 
       if (cached) {
@@ -47,10 +71,11 @@ export default function BattlesPage() {
       }
 
       // Fetch if not cached
-      const response = await battlesService.listBattles(BATTLES_PER_PAGE, offset)
-
-      // Debug: Log the response to see its structure
-      console.log('Battles API Response:', response)
+      const response = await battlesService.listBattles(
+        BATTLES_PER_PAGE,
+        offset,
+        searchQuery || undefined
+      )
 
       const battlesList = response.battles || []
       const totalCount = response.total
@@ -101,8 +126,32 @@ export default function BattlesPage() {
                 All <span className="text-primary">Battles</span>
               </h1>
               <p className="text-muted-foreground text-lg mt-2">
-                {total > 0 ? `Browse ${total.toLocaleString()} battles available in the database` : 'Loading battles...'}
+                {searchQuery
+                  ? `Found ${total.toLocaleString()} battle${total !== 1 ? 's' : ''} matching "${searchQuery}"`
+                  : total > 0
+                    ? `Browse ${total.toLocaleString()} battles available in the database`
+                    : 'Loading battles...'}
               </p>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search battles..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9 pr-9 bg-card/60 border-border/50 focus:border-primary/50"
+              />
+              {searchInput && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -196,7 +245,16 @@ export default function BattlesPage() {
             <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40">
               <Swords className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-muted-foreground">No battles found</h3>
-              <p className="text-muted-foreground mt-2">Check back later for updates</p>
+              <p className="text-muted-foreground mt-2">
+                {searchQuery
+                  ? `No results for "${searchQuery}". Try a different search term.`
+                  : 'Check back later for updates'}
+              </p>
+              {searchQuery && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={clearSearch}>
+                  Clear search
+                </Button>
+              )}
             </div>
           )}
         </div>

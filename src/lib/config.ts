@@ -17,6 +17,7 @@ export const config = {
     analyticsSearch: '/api/v1/analytics/search',
     analyticsPopular: '/api/v1/analytics/popular',
     nounStats: '/api/v1/noun-stats',
+    trendingRappers: '/api/v1/trending-rappers',
   },
 } as const
 

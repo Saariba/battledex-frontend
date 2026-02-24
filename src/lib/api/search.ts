@@ -89,4 +89,17 @@ export const searchService = {
     )
     return response.queries
   },
+
+  /**
+   * Fetch trending rappers
+   */
+  async getTrendingRappers(limit: number = 6): Promise<{ name: string, search_count: number, battle_count: number }[]> {
+    const response = await apiRequest<{
+      rappers: { name: string, search_count: number, battle_count: number }[]
+      source: string
+    }>(
+      `${config.endpoints.trendingRappers}?limit=${limit}`
+    )
+    return response.rappers
+  },
 }

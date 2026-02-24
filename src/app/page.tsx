@@ -13,8 +13,40 @@ import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 import { SearchResult } from "@/lib/types"
 import { useSearch } from "@/hooks/use-search"
 import { searchService } from "@/lib/api/search"
-import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles } from "lucide-react"
+import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+const RECENT_SEARCHES_KEY = 'battledex_recent_searches'
+const MAX_RECENT = 5
+
+function getRecentSearches(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveRecentSearch(query: string) {
+  try {
+    const recent = getRecentSearches().filter(q => q !== query)
+    recent.unshift(query)
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)))
+  } catch {
+    // Silently fail
+  }
+}
+
+function removeRecentSearch(query: string) {
+  try {
+    const recent = getRecentSearches().filter(q => q !== query)
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent))
+  } catch {
+    // Silently fail
+  }
+}
 
 export default function RapBattleApp() {
   return (
@@ -41,6 +73,8 @@ function RapBattleAppInner() {
   const [featuredLoading, setFeaturedLoading] = useState(true)
   const [isShuffling, setIsShuffling] = useState(false)
   const [popularQueries, setPopularQueries] = useState<{ query: string, count: number }[]>([])
+  const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const [trendingRappers, setTrendingRappers] = useState<{ name: string, search_count: number, battle_count: number }[]>([])
 
   const loadFeaturedBars = useCallback(async () => {
     try {
@@ -58,6 +92,8 @@ function RapBattleAppInner() {
   useEffect(() => {
     loadFeaturedBars()
     searchService.getPopularQueries(8).then(setPopularQueries).catch(() => {})
+    searchService.getTrendingRappers(6).then(setTrendingRappers).catch(() => {})
+    setRecentSearches(getRecentSearches())
   }, [])
 
   const handleSimilarWordClick = (word: string) => {
@@ -98,11 +134,15 @@ function RapBattleAppInner() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  // Wrap performSearch to also update URL
+  // Wrap performSearch to also update URL and save recent
   const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword') => {
     setSelectedRapper(null)
     router.push(`?q=${encodeURIComponent(query)}`, { scroll: false })
     performSearch(query, mode)
+    if (query.trim()) {
+      saveRecentSearch(query.trim())
+      setRecentSearches(getRecentSearches())
+    }
   }, [router, performSearch])
 
   // Handle rapper filter: re-fetch from backend with filter applied
@@ -184,24 +224,58 @@ function RapBattleAppInner() {
                   isLoading={isLoading}
                 />
               )}
-              {!currentQuery && !isLoading && popularQueries.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    Trending
-                  </span>
-                  {popularQueries.map(({ query }) => (
-                    <button
-                      key={query}
-                      onClick={() => {
-                        setSearchQuery(query)
-                        handleSearch(query, 'semantic')
-                      }}
-                      className="px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200"
-                    >
-                      {query}
-                    </button>
-                  ))}
+              {!currentQuery && !isLoading && (recentSearches.length > 0 || popularQueries.length > 0) && (
+                <div className="mt-4 space-y-2">
+                  {recentSearches.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Recent
+                      </span>
+                      {recentSearches.map((q) => (
+                        <span key={q} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200">
+                          <button
+                            onClick={() => {
+                              setSearchQuery(q)
+                              handleSearch(q, 'semantic')
+                            }}
+                          >
+                            {q}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeRecentSearch(q)
+                              setRecentSearches(getRecentSearches())
+                            }}
+                            className="text-muted-foreground/50 hover:text-foreground ml-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {popularQueries.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        Trending
+                      </span>
+                      {popularQueries.map(({ query }) => (
+                        <button
+                          key={query}
+                          onClick={() => {
+                            setSearchQuery(query)
+                            handleSearch(query, 'semantic')
+                          }}
+                          className="px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200"
+                        >
+                          {query}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -244,6 +318,30 @@ function RapBattleAppInner() {
                       onCorrection={(result) => setCorrectionResult(result)}
                     />
                   ))}
+                </div>
+              )}
+
+              {/* Trending Rappers */}
+              {trendingRappers.length > 0 && (
+                <div className="pt-4">
+                  <h3 className="text-lg font-bold font-headline flex items-center gap-2 mb-3">
+                    <Users className="w-4 h-4 text-primary" />
+                    Trending Rappers
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {trendingRappers.map(({ name, battle_count }) => (
+                      <Link
+                        key={name}
+                        href={`/rappers/${encodeURIComponent(name)}`}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold bg-card/50 border border-border/30 text-foreground hover:border-primary/40 hover:text-primary transition-all duration-200 flex items-center gap-2"
+                      >
+                        {name}
+                        {battle_count > 0 && (
+                          <span className="text-[10px] text-muted-foreground">{battle_count} battles</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </section>

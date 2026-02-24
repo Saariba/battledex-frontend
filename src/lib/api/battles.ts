@@ -52,9 +52,12 @@ export const battlesService = {
    */
   async listBattles(
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
+    search?: string
   ): Promise<BattlesResponse> {
-    const url = `${config.endpoints.battles}?limit=${limit}&offset=${offset}`
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    if (search) params.set('search', search)
+    const url = `${config.endpoints.battles}?${params.toString()}`
 
     const response = await apiRequest<BackendBattlesResponse>(url, {
       method: 'GET',

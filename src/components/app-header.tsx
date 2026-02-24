@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Swords, BarChart3 } from "lucide-react"
+import { Swords, BarChart3, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/battles", label: "Browse Battles", icon: Swords },
+  { href: "/rappers", label: "Rappers", icon: Users },
   { href: "/stats", label: "DB Stats", icon: BarChart3 },
 ]
 
