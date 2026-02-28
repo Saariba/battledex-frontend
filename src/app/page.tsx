@@ -57,6 +57,7 @@ export default function RapBattleApp() {
 }
 
 function RapBattleAppInner() {
+  const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'keyword' | 'semantic'>('all')
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
@@ -67,7 +68,7 @@ function RapBattleAppInner() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isLoading, results, totalResults, rapperCounts: backendRapperCounts, similarWords, currentQuery, performSearch } = useSearch()
+  const { isLoading, results, rapperCounts: backendRapperCounts, similarWords, currentQuery, performSearch } = useSearch()
   const hasRunInitialSearch = useRef(false)
   const [featuredBars, setFeaturedBars] = useState<SearchResult[]>([])
   const [featuredLoading, setFeaturedLoading] = useState(true)
@@ -162,6 +163,10 @@ function RapBattleAppInner() {
     setDisplayCount(25)
   }, [results])
 
+  useEffect(() => {
+    setResultTypeFilter('all')
+  }, [currentQuery, selectedRapper])
+
   // Infinite scroll: load more results when scrolling near bottom
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -180,13 +185,26 @@ function RapBattleAppInner() {
     return () => observer.disconnect()
   }, [isLoading])
 
+  const filteredResults = React.useMemo(() => {
+    if (resultTypeFilter === 'all') {
+      return results
+    }
+
+    return results.filter((result) =>
+      resultTypeFilter === 'keyword'
+        ? result.type === 'exact'
+        : result.type === 'semantic'
+    )
+  }, [resultTypeFilter, results])
+
   // Slice results for progressive rendering
-  const displayedResults = results.slice(0, displayCount)
-  const hasMore = displayCount < results.length
+  const displayedResults = filteredResults.slice(0, displayCount)
+  const hasMore = displayCount < filteredResults.length
 
   // Get rapper counts from backend (accurate across all matches, not just loaded results)
   const rapperCounts = React.useMemo(() => {
     return Object.entries(backendRapperCounts)
+      .filter(([name]) => name.trim().toUpperCase() !== 'HOST')
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
   }, [backendRapperCounts])
@@ -354,23 +372,42 @@ function RapBattleAppInner() {
                 <div>
                   <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
                     <span className="text-primary">#</span>
-                    {totalResults} Results Found
+                    Results
                     {selectedRapper && (
                       <span className="text-base font-normal text-muted-foreground">
                         • Filtered by {selectedRapper}
                       </span>
                     )}
                   </h3>
-                  {results.length < totalResults && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Showing {results.length} of {totalResults} results
-                    </p>
-                  )}
                 </div>
               </div>
 
               {results.length > 0 && (
                 <>
+                  <div className="space-y-2 mb-6">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Filter Results
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { key: 'all', label: 'All' },
+                        { key: 'keyword', label: 'Keyword' },
+                        { key: 'semantic', label: 'Semantic' },
+                      ].map(({ key, label }) => (
+                        <button
+                          key={key}
+                          onClick={() => setResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                            resultTypeFilter === key
+                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                              : 'bg-card/50 text-foreground hover:bg-card border border-border/30'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   {rapperCounts.length > 0 && (
                     <div className="space-y-2">
@@ -391,7 +428,7 @@ function RapBattleAppInner() {
                       <div className="space-y-2">
                         {/* Top rappers as buttons */}
                         <div className="flex flex-wrap gap-2">
-                          {topRappers.map(({ name, count }) => (
+                          {topRappers.map(({ name }) => (
                             <div key={name} className="flex items-center gap-1">
                               <button
                                 onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
@@ -401,7 +438,7 @@ function RapBattleAppInner() {
                                     : 'bg-card/50 text-foreground hover:bg-card hover:scale-102 border border-border/30'
                                 }`}
                               >
-                                {name} ({count})
+                                {name}
                               </button>
                               <Link
                                 href={`/rappers/${encodeURIComponent(name)}`}
@@ -442,7 +479,7 @@ function RapBattleAppInner() {
                   <PunchlineCardSkeleton key={i} />
                 ))}
               </div>
-            ) : results.length > 0 ? (
+            ) : filteredResults.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {displayedResults.map((result) => (
@@ -462,14 +499,18 @@ function RapBattleAppInner() {
                     <p className="mt-3 text-sm text-muted-foreground font-medium">Loading more results...</p>
                   </div>
                 )}
-                {!hasMore && results.length > 25 && (
-                  <div className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Showing all {results.length} results
-                    </p>
-                  </div>
-                )}
+                {!hasMore && filteredResults.length > 25 && <div className="py-8 text-center" />}
               </>
+            ) : results.length > 0 ? (
+              <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
+                <div className="bg-secondary/20 p-8 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">
+                  <Search className="w-16 h-16 text-muted-foreground" />
+                </div>
+                <h3 className="text-2xl font-bold text-muted-foreground">No {resultTypeFilter} results in this set.</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mt-3">
+                  Switch to another result filter or broaden the search query.
+                </p>
+              </div>
             ) : (
               <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
                 <div className="bg-secondary/20 p-8 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">

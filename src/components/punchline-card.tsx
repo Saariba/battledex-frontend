@@ -139,7 +139,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
             )}
             {result.score && (
               <Badge variant="secondary" className="text-[10px] bg-secondary/50">
-                Match: {(result.score * 100).toFixed(0)}%
+                Confidence: {(result.score * 100).toFixed(0)}%
               </Badge>
             )}
           </div>

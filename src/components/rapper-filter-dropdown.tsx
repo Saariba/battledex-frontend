@@ -48,7 +48,7 @@ export function RapperFilterDropdown({
           className="w-[200px] justify-between"
         >
           {selectedRapper && rappers.find(r => r.name === selectedRapper)
-            ? `${selectedRapper} (${rappers.find(r => r.name === selectedRapper)?.count})`
+            ? selectedRapper
             : "More rappers..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -82,9 +82,6 @@ export function RapperFilterDropdown({
                 )}
               >
                 <span className="flex-1 truncate" title={rapper.name}>{rapper.name}</span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  ({rapper.count})
-                </span>
                 {selectedRapper === rapper.name && (
                   <Check className="ml-2 h-4 w-4 shrink-0" />
                 )}
