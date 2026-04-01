@@ -234,7 +234,11 @@ export function useSearch() {
         currentQuery, PAGE_SIZE, mode, filterObj, undefined, offset
       )
 
-      setResults(prev => [...prev, ...response.results])
+      setResults(prev => {
+        const existingIds = new Set(prev.map(r => r.id))
+        const newResults = response.results.filter(r => !existingIds.has(r.id))
+        return [...prev, ...newResults]
+      })
       setHasMore(offset + response.results.length < response.total)
     } catch (error) {
       console.error('Load more error:', error)
