@@ -8,7 +8,7 @@ import { Search } from "lucide-react"
 import { useAutocomplete } from "@/hooks/use-autocomplete"
 
 interface SearchControlsProps {
-  onSearch: (query: string, mode: 'semantic' | 'keyword') => void
+  onSearch: (query: string, mode: 'semantic' | 'keyword' | 'hybrid') => void
   isLoading?: boolean
   value?: string
   onValueChange?: (value: string) => void
@@ -55,13 +55,13 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
     e.preventDefault()
     close()
     if (!query.trim()) return
-    onSearch(query, 'semantic')
+    onSearch(query, 'hybrid')
   }
 
   const handleSelect = (suggestion: string) => {
     setQuery(suggestion)
     close()
-    onSearch(suggestion, 'semantic')
+    onSearch(suggestion, 'hybrid')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

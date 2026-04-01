@@ -16,12 +16,12 @@ export const searchService = {
   async search(
     query: string,
     topK: number = 20,
-    mode: 'semantic' | 'keyword' = 'semantic',
+    mode: 'semantic' | 'keyword' | 'hybrid' = 'hybrid',
     filters?: { rapper_name?: string },
     signal?: AbortSignal,
     offset: number = 0,
   ): Promise<{ results: SearchResult[], total: number, rapperCounts: Record<string, number> }> {
-    const backendSearchMode = mode === 'keyword' ? 'text' : 'hybrid'
+    const backendSearchMode = mode === 'keyword' ? 'text' : mode === 'semantic' ? 'semantic' : 'hybrid'
 
     const requestBody: BackendSearchRequest = {
       query,

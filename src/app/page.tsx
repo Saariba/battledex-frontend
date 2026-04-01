@@ -32,7 +32,6 @@ export default function RapBattleApp() {
 function RapBattleAppInner() {
   const {
     resultTypeFilter,
-    setResultTypeFilter,
     selectedVideo,
     setSelectedVideo,
     correctionResult,
@@ -64,6 +63,7 @@ function RapBattleAppInner() {
     remainingRappers,
     handleSearch,
     handleRapperFilter,
+    handleResultTypeFilter,
     handleCopySearchLink,
     handleSimilarWordClick,
     handleRemoveRecentSearch,
@@ -197,7 +197,7 @@ function RapBattleAppInner() {
                             <button
                               onClick={() => {
                                 setSearchQuery(q)
-                                handleSearch(q, 'semantic')
+                                handleSearch(q, 'hybrid')
                               }}
                             >
                               {q}
@@ -228,7 +228,7 @@ function RapBattleAppInner() {
                             key={query}
                             onClick={() => {
                               setSearchQuery(query)
-                              handleSearch(query, 'semantic')
+                              handleSearch(query, 'hybrid')
                             }}
                             className="rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
                           >
@@ -352,7 +352,7 @@ function RapBattleAppInner() {
                     ].map(({ key, label }) => (
                       <button
                         key={key}
-                        onClick={() => setResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
+                        onClick={() => handleResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
                         className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
                           resultTypeFilter === key
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'

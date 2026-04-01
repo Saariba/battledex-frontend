@@ -25,12 +25,12 @@ export function useSearch() {
 
   // Abort controller ref — used to cancel in-flight requests when a new search starts
   const abortControllerRef = useRef<AbortController | null>(null)
-  const currentModeRef = useRef<'semantic' | 'keyword'>('semantic')
+  const currentModeRef = useRef<'semantic' | 'keyword' | 'hybrid'>('hybrid')
   const currentFilterRef = useRef<string | null>(null)
 
   const performSearch = useCallback(async (
     query: string,
-    mode: 'semantic' | 'keyword' = 'semantic',
+    mode: 'semantic' | 'keyword' | 'hybrid' = 'hybrid',
     rapperFilter?: string | null,
   ) => {
     // Validate query
@@ -68,6 +68,7 @@ export function useSearch() {
       if (cachedSearch && cachedSimilar) {
         setResults(cachedSearch.results)
         setTotalResults(cachedSearch.total)
+        setHasMore(cachedSearch.results.length >= PAGE_SIZE && cachedSearch.results.length < cachedSearch.total)
         setRapperCounts(cachedSearch.rapperCounts || {})
         setSimilarWords(cachedSimilar.similar_words)
         setIsLoading(false)
@@ -78,6 +79,7 @@ export function useSearch() {
       if (cachedSearch) {
         setResults(cachedSearch.results)
         setTotalResults(cachedSearch.total)
+        setHasMore(cachedSearch.results.length >= PAGE_SIZE && cachedSearch.results.length < cachedSearch.total)
         if (!rapperFilter) {
           setRapperCounts(cachedSearch.rapperCounts || {})
         }
@@ -98,7 +100,7 @@ export function useSearch() {
           return await searchService.search(query, PAGE_SIZE, mode, filterObj, controller.signal)
         } catch (error) {
           const shouldFallback =
-            mode === 'semantic' &&
+            (mode === 'semantic' || mode === 'hybrid') &&
             (error instanceof ApiError
               ? (error.statusCode === undefined || error.statusCode >= 500)
               : true)
@@ -157,7 +159,7 @@ export function useSearch() {
 
       setResults(searchResults.results)
       setTotalResults(searchResults.total)
-      setHasMore(searchResults.results.length < searchResults.total)
+      setHasMore(searchResults.results.length >= PAGE_SIZE && searchResults.results.length < searchResults.total)
       // Only update rapper counts from unfiltered searches
       if (!rapperFilter) {
         setRapperCounts(searchResults.rapperCounts || {})
@@ -227,8 +229,6 @@ export function useSearch() {
       const mode = currentModeRef.current
       const rapperFilter = currentFilterRef.current
       const filterObj = rapperFilter ? { rapper_name: rapperFilter } : undefined
-      const backendMode = mode === 'keyword' ? 'text' : 'hybrid'
-
       const offset = results.length
       const response = await searchService.search(
         currentQuery, PAGE_SIZE, mode, filterObj, undefined, offset
@@ -239,7 +239,9 @@ export function useSearch() {
         const newResults = response.results.filter(r => !existingIds.has(r.id))
         return [...prev, ...newResults]
       })
-      setHasMore(offset + response.results.length < response.total)
+      // Stop loading if backend returned fewer results than requested (no more pages)
+      const pageIsFull = response.results.length >= PAGE_SIZE
+      setHasMore(pageIsFull && offset + response.results.length < response.total)
     } catch (error) {
       console.error('Load more error:', error)
     } finally {
