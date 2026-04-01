@@ -1,6 +1,6 @@
 "use client"
 
-import React, { Suspense } from "react"
+import React, { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import dynamic from "next/dynamic"
@@ -13,8 +13,10 @@ import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
 const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
 import { useHomepage } from "@/hooks/use-homepage"
-import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check } from "lucide-react"
+import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check, FlaskConical } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+const SEMANTIC_BETA_DISMISSED_KEY = 'battledex_semantic_beta_dismissed'
 
 const LEAGUE_MARKS = [
   { name: "DLTLLY", logo: "/league-dltlly.png" },
@@ -69,6 +71,17 @@ function RapBattleAppInner() {
     handleRemoveRecentSearch,
     loadFeaturedBars,
   } = useHomepage()
+
+  const [semanticBetaDismissed, setSemanticBetaDismissed] = useState(true) // default true to avoid flash
+  useEffect(() => {
+    try {
+      setSemanticBetaDismissed(localStorage.getItem(SEMANTIC_BETA_DISMISSED_KEY) === 'true')
+    } catch { /* ignore */ }
+  }, [])
+  const dismissSemanticBeta = () => {
+    setSemanticBetaDismissed(true)
+    try { localStorage.setItem(SEMANTIC_BETA_DISMISSED_KEY, 'true') } catch { /* ignore */ }
+  }
 
   if (!isMounted) return null
 
@@ -353,16 +366,42 @@ function RapBattleAppInner() {
                       <button
                         key={key}
                         onClick={() => handleResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
-                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 inline-flex items-center gap-1.5 ${
                           resultTypeFilter === key
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                             : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
                         }`}
                       >
                         {label}
+                        {key === 'semantic' && (
+                          <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                            resultTypeFilter === 'semantic'
+                              ? 'bg-primary-foreground/20 text-primary-foreground'
+                              : 'bg-yellow-500/15 text-yellow-500'
+                          }`}>
+                            <FlaskConical className="w-2.5 h-2.5" />
+                            Beta
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
+
+                  {(resultTypeFilter === 'semantic' || resultTypeFilter === 'all') && !semanticBetaDismissed && (
+                    <div className="flex items-start gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3">
+                      <FlaskConical className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground flex-1">
+                        <span className="font-semibold text-yellow-500">Semantische Suche (Beta)</span> — Ergebnisse basieren auf KI-Embeddings und werden laufend verbessert. Für exakte Treffer nutze die Stichwort-Suche.
+                      </p>
+                      <button
+                        onClick={dismissSemanticBeta}
+                        className="text-muted-foreground/50 hover:text-foreground transition-colors flex-shrink-0"
+                        aria-label="Hinweis schließen"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
 
                   {rapperCounts.length > 0 && (
                     <div className="space-y-3">
