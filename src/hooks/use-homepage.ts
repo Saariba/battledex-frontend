@@ -176,10 +176,12 @@ export function useHomepage() {
   }, [currentQuery, selectedRapper])
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !isLoading && !isLoadingMore) {
-          loadMore()
+          if (debounceTimer) clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => loadMore(), 300)
         }
       },
       { threshold: 0.1 }
@@ -189,7 +191,10 @@ export function useHomepage() {
       observer.observe(loadMoreRef.current)
     }
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      if (debounceTimer) clearTimeout(debounceTimer)
+    }
   }, [isLoading, isLoadingMore, loadMore])
 
   const filteredResults = results
