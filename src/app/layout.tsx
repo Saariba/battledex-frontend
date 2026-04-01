@@ -36,6 +36,8 @@ export default function RootLayout({
             <span>&bull;</span>
             <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
             <span>&bull;</span>
+            <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
+            <span>&bull;</span>
             <a href="https://www.reddit.com/user/Saarstriker/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Kontakt</a>
           </footer>
         </div>
