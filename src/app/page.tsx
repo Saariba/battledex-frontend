@@ -86,12 +86,12 @@ function RapBattleAppInner() {
 
   return (
     <>
-      <main className="relative flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10">
+      <main className="relative flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] grid-fade opacity-50" />
 
         <div className="relative mx-auto flex max-w-6xl flex-col gap-8">
           {hasActiveSearch ? (
-            <section className="sticky top-4 z-20 overflow-hidden rounded-[28px] border border-border/50 bg-background/75 p-4 shadow-2xl shadow-black/35 backdrop-blur-xl md:p-5">
+            <section className="sticky top-14 sm:top-4 z-20 overflow-hidden rounded-2xl sm:rounded-[28px] border border-border/50 bg-background/75 p-3 shadow-2xl shadow-black/35 backdrop-blur-xl sm:p-4 md:p-5">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
               <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
@@ -100,7 +100,7 @@ function RapBattleAppInner() {
                     Suchkonsole
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
+                    <h2 className="text-lg font-black uppercase tracking-tight sm:text-2xl md:text-3xl">
                       {currentQuery || "Punchlines durchsuchen"}
                     </h2>
                     <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -141,19 +141,19 @@ function RapBattleAppInner() {
               )}
             </section>
           ) : (
-            <section className="relative overflow-hidden rounded-[36px] border border-border/50 bg-card/40 px-6 py-8 shadow-2xl shadow-black/25 backdrop-blur-md md:px-10 md:py-12">
+            <section className="relative overflow-hidden rounded-2xl sm:rounded-[36px] border border-border/50 bg-card/40 px-4 py-6 shadow-2xl shadow-black/25 backdrop-blur-md sm:px-6 sm:py-8 md:px-10 md:py-12">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
-              <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+              <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
               <div className="absolute left-0 top-24 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
 
               <div className="relative space-y-8">
                 <div className="space-y-5 text-center">
                   <div className="space-y-4">
-                    <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[0.95] tracking-tight md:text-7xl">
+                    <h1 className="mx-auto max-w-4xl text-3xl font-black uppercase leading-[0.95] tracking-tight sm:text-5xl md:text-7xl">
                       Finde
                       <span className="block text-primary">Punchlines</span>
                     </h1>
-                    <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
+                    <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base md:text-lg">
                       BattleDex durchsucht Bars nach Angle, Inhalt und Sprache — auch wenn du den genauen Wortlaut nicht kennst.
                     </p>
                   </div>
@@ -249,7 +249,7 @@ function RapBattleAppInner() {
           )}
 
           {!hasActiveSearch && (
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-center gap-2 text-2xl font-bold font-headline">

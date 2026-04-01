@@ -43,7 +43,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
   return (
     <Card className="card-hover-effect relative overflow-hidden border-border/50 bg-card/55 shadow-xl shadow-black/20 backdrop-blur-md">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
-      <CardHeader className="p-5 pb-3">
+      <CardHeader className="p-3 sm:p-5 pb-2 sm:pb-3">
         {onCorrection && (
           <button
             onClick={() => onCorrection(result)}
@@ -100,7 +100,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
         </h3>
       </CardHeader>
 
-      <CardContent className="p-5 pt-0">
+      <CardContent className="p-3 sm:p-5 pt-0">
         <div className="mb-4 flex items-center gap-2">
           <div className="rounded-full bg-primary/15 p-1.5 text-primary">
             <Mic2 className="h-3.5 w-3.5" />
@@ -115,15 +115,15 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-border/40 bg-black/20 p-4">
           <div className="pointer-events-none absolute left-3 top-3 text-5xl leading-none text-primary/20">"</div>
           {hasContext && lineAbove && !showFullContext && (
-            <p className="mb-2 pl-5 text-sm font-mono leading-tight text-muted-foreground/55">
+            <p className="mb-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/55">
               {shouldHighlight ? highlightKeywords(lineAbove, searchQuery) : lineAbove}
             </p>
           )}
-          <p className="pl-5 text-xl font-bold font-mono leading-tight text-foreground sm:text-2xl">
+          <p className="pl-4 sm:pl-5 text-base font-bold font-mono leading-snug text-foreground sm:text-xl md:text-2xl">
             "{displayLine}"
           </p>
           {hasContext && lineBelow && !showFullContext && (
-            <p className="mt-2 pl-5 text-sm font-mono leading-tight text-muted-foreground/55">
+            <p className="mt-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/55">
               {shouldHighlight ? highlightKeywords(lineBelow, searchQuery) : lineBelow}
             </p>
           )}
@@ -152,7 +152,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
         )}
       </CardContent>
 
-      <CardFooter className="mt-2 flex justify-between gap-3 border-t border-border/20 p-5 pt-4">
+      <CardFooter className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/20 p-3 sm:p-5 pt-3 sm:pt-4">
         {hasMoreContext ? (
           <Button
             variant="ghost"
@@ -163,21 +163,24 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
             {showFullContext ? (
               <>Kontext ausblenden <ChevronUp className="ml-1 w-3 h-3" /></>
             ) : (
-              <>Ganzer Kontext <ChevronDown className="ml-1 w-3 h-3" /></>
+              <>Kontext <ChevronDown className="ml-1 w-3 h-3" /></>
             )}
           </Button>
         ) : (
           <div />
         )}
-        <ShareButton result={result} />
-        <Button
-          size="sm"
-          className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all duration-300 hover:scale-105"
-          onClick={() => onPlayVideo(result)}
-        >
-          <Play className="mr-1.5 w-3.5 h-3.5 fill-current" />
-          Video abspielen
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <ShareButton result={result} />
+          <Button
+            size="sm"
+            className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all duration-300 hover:scale-105 text-xs sm:text-sm"
+            onClick={() => onPlayVideo(result)}
+          >
+            <Play className="mr-1 sm:mr-1.5 w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
+            <span className="hidden sm:inline">Video abspielen</span>
+            <span className="sm:hidden">Video</span>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

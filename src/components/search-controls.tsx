@@ -111,14 +111,14 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
   return (
     <div className="w-full relative" ref={dropdownRef}>
       <form onSubmit={handleSubmit} className="relative group">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-          <Search className="w-5 h-5" />
+        <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
         <Input
           ref={inputRef}
           placeholder="Punchlines suchen..."
-          className={`pl-12 pr-32 bg-card/70 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all duration-300 shadow-lg ${
-            compact ? 'h-12 text-base' : 'h-14 text-lg'
+          className={`pl-10 sm:pl-12 pr-24 sm:pr-32 bg-card/70 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all duration-300 shadow-lg ${
+            compact ? 'h-11 sm:h-12 text-sm sm:text-base' : 'h-12 sm:h-14 text-base sm:text-lg'
           }`}
           value={query}
           onChange={handleChange}
@@ -134,10 +134,10 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         <div className="absolute inset-y-2 right-2 flex items-center">
           <Button
             type="submit"
-            className={`h-full rounded-xl bg-primary hover:bg-primary/90 text-white font-bold ${compact ? 'px-4' : 'px-6'}`}
+            className={`h-full rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm ${compact ? 'px-3 sm:px-4' : 'px-4 sm:px-6'}`}
             disabled={isLoading || !query.trim()}
           >
-            {isLoading ? "Suche läuft..." : compact ? "Suchen" : "Bars finden"}
+            {isLoading ? "Suche..." : compact ? "Suchen" : "Bars finden"}
           </Button>
         </div>
       </form>

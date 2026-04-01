@@ -37,11 +37,13 @@ export default function RappersPage() {
     }
   }
 
+  const withBattles = useMemo(() => allRappers.filter(r => r.battleCount > 0), [allRappers])
+
   const filtered = useMemo(() => {
-    if (!searchInput.trim()) return allRappers
+    if (!searchInput.trim()) return withBattles
     const q = searchInput.toLowerCase()
-    return allRappers.filter(r => r.name.toLowerCase().includes(q))
-  }, [allRappers, searchInput])
+    return withBattles.filter(r => r.name.toLowerCase().includes(q))
+  }, [withBattles, searchInput])
 
   const grouped = useMemo(() => {
     const map = new Map<string, RapperListItem[]>()
@@ -80,8 +82,8 @@ export default function RappersPage() {
                 {isLoading
                   ? 'Wird geladen...'
                   : searchInput
-                    ? `${filtered.length} von ${allRappers.length} Rappern`
-                    : `${allRappers.length} Rapper in der Datenbank`}
+                    ? `${filtered.length} von ${withBattles.length} Rappern`
+                    : `${withBattles.length} Rapper in der Datenbank`}
               </p>
             </div>
           </div>

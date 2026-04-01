@@ -118,7 +118,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
 
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[95vw] sm:w-full bg-background border-primary/20 p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl w-full sm:w-[95vw] bg-background border-primary/20 p-0 rounded-none sm:rounded-lg inset-0 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] translate-x-0 translate-y-0 max-h-[100dvh] sm:max-h-[90vh]">
         <DialogHeader className="p-4 sm:p-6 bg-card/50 relative">
           {onCorrection && (
             <button
