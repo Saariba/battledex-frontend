@@ -39,6 +39,7 @@ interface BackendBattleDetail {
   event_date?: string
   video_duration?: number
   thumbnail_url?: string
+  youtube_views?: number
   total_lines: number
   rappers: BackendBattleDetailRapper[]
 }
@@ -69,6 +70,7 @@ export interface BattleDetail {
   eventDate?: string
   videoDuration?: number
   thumbnailUrl?: string
+  youtubeViews?: number
   totalLines: number
   league: string
   rappers: BattleDetailRapper[]
@@ -140,6 +142,7 @@ export const battlesService = {
       eventDate: response.event_date,
       videoDuration: response.video_duration,
       thumbnailUrl: response.thumbnail_url,
+      youtubeViews: response.youtube_views,
       totalLines: response.total_lines,
       league: extractLeague(response.title),
       rappers: response.rappers.map(r => ({

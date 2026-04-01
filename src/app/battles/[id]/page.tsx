@@ -10,8 +10,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ArrowLeft, Play, Swords, Mic2, FileText, ScrollText, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Play, Swords, Mic2, FileText, ScrollText, ExternalLink, Eye } from 'lucide-react'
 import { toast } from 'sonner'
+
+function formatViews(views: number): string {
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`
+  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`
+  return views.toLocaleString('de-DE')
+}
 
 const SPEAKER_COLORS = [
   'text-primary',
@@ -151,6 +157,12 @@ export default function BattleDetailPage() {
                   <ScrollText className="w-3 h-3 mr-1" />
                   {battle.totalLines} Zeilen
                 </Badge>
+                {battle.youtubeViews != null && battle.youtubeViews > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-code border-yellow-500/30 text-yellow-500">
+                    <Eye className="w-3 h-3 mr-1" />
+                    {formatViews(battle.youtubeViews)} Views
+                  </Badge>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tight">
                 {battle.title}
