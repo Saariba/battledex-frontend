@@ -1,52 +1,25 @@
 "use client"
 
-import React, { Suspense, useState, useEffect, useRef, useCallback } from "react"
+import React, { Suspense } from "react"
 import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation"
+import Image from "next/image"
+import dynamic from "next/dynamic"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
 import { PunchlineCard } from "@/components/punchline-card"
 import { PunchlineCardSkeleton } from "@/components/punchline-card-skeleton"
-import { VideoModal } from "@/components/video-modal"
-import { CorrectionModal } from "@/components/correction-modal"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
-import { SearchResult } from "@/lib/types"
-import { useSearch } from "@/hooks/use-search"
-import { searchService } from "@/lib/api/search"
-import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock } from "lucide-react"
+
+const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
+const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
+import { useHomepage } from "@/hooks/use-homepage"
+import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const RECENT_SEARCHES_KEY = 'battledex_recent_searches'
-const MAX_RECENT = 5
-
-function getRecentSearches(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-function saveRecentSearch(query: string) {
-  try {
-    const recent = getRecentSearches().filter(q => q !== query)
-    recent.unshift(query)
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)))
-  } catch {
-    // Silently fail
-  }
-}
-
-function removeRecentSearch(query: string) {
-  try {
-    const recent = getRecentSearches().filter(q => q !== query)
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent))
-  } catch {
-    // Silently fail
-  }
-}
+const LEAGUE_MARKS = [
+  { name: "DLTLLY", logo: "/league-dltlly.png" },
+  { name: "FOB", logo: "/league-fob.png" },
+]
 
 export default function RapBattleApp() {
   return (
@@ -57,472 +30,431 @@ export default function RapBattleApp() {
 }
 
 function RapBattleAppInner() {
-  const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'keyword' | 'semantic'>('all')
-  const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
-  const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
-  const [isMounted, setIsMounted] = useState(false)
-  const [selectedRapper, setSelectedRapper] = useState<string | null>(null)
-  const [displayCount, setDisplayCount] = useState(25)
-  const [searchQuery, setSearchQuery] = useState("")
-  const loadMoreRef = useRef<HTMLDivElement>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { isLoading, results, rapperCounts: backendRapperCounts, similarWords, currentQuery, performSearch } = useSearch()
-  const hasRunInitialSearch = useRef(false)
-  const [featuredBars, setFeaturedBars] = useState<SearchResult[]>([])
-  const [featuredLoading, setFeaturedLoading] = useState(true)
-  const [isShuffling, setIsShuffling] = useState(false)
-  const [popularQueries, setPopularQueries] = useState<{ query: string, count: number }[]>([])
-  const [recentSearches, setRecentSearches] = useState<string[]>([])
-  const [trendingRappers, setTrendingRappers] = useState<{ name: string, search_count: number, battle_count: number }[]>([])
-
-  const loadFeaturedBars = useCallback(async () => {
-    try {
-      setIsShuffling(true)
-      const lines = await searchService.getRandomLines(5)
-      setFeaturedBars(lines)
-    } catch {
-      // Silently fail - featured bars are non-critical
-    } finally {
-      setFeaturedLoading(false)
-      setIsShuffling(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadFeaturedBars()
-    searchService.getPopularQueries(8).then(setPopularQueries).catch(() => {})
-    searchService.getTrendingRappers(6).then(setTrendingRappers).catch(() => {})
-    setRecentSearches(getRecentSearches())
-  }, [])
-
-  const handleSimilarWordClick = (word: string) => {
-    setSearchQuery(word)
-    router.push(`?q=${encodeURIComponent(word)}`, { scroll: false })
-    performSearch(word, 'semantic')
-  }
-
-  // Sync URL query param to state and auto-trigger search on load
-  useEffect(() => {
-    const q = searchParams.get("q")
-    if (q && !hasRunInitialSearch.current) {
-      hasRunInitialSearch.current = true
-      setSearchQuery(q)
-      performSearch(q, "semantic")
-    }
-  }, [searchParams, performSearch])
-
-  // Update document.title based on search state
-  useEffect(() => {
-    if (currentQuery) {
-      document.title = `${currentQuery} - BattleDex`
-    } else {
-      document.title = "BattleDex"
-    }
-    return () => { document.title = "BattleDex" }
-  }, [currentQuery])
-
-  // Keyboard shortcut: "/" to focus search input
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
-        e.preventDefault()
-        searchInputRef.current?.focus()
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [])
-
-  // Wrap performSearch to also update URL and save recent
-  const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword') => {
-    setSelectedRapper(null)
-    router.push(`?q=${encodeURIComponent(query)}`, { scroll: false })
-    performSearch(query, mode)
-    if (query.trim()) {
-      saveRecentSearch(query.trim())
-      setRecentSearches(getRecentSearches())
-    }
-  }, [router, performSearch])
-
-  // Handle rapper filter: re-fetch from backend with filter applied
-  const handleRapperFilter = useCallback((rapperName: string | null) => {
-    setSelectedRapper(rapperName)
-    if (currentQuery) {
-      performSearch(currentQuery, 'semantic', rapperName)
-    }
-  }, [currentQuery, performSearch])
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // Reset display count when results change
-  useEffect(() => {
-    setDisplayCount(25)
-  }, [results])
-
-  useEffect(() => {
-    setResultTypeFilter('all')
-  }, [currentQuery, selectedRapper])
-
-  // Infinite scroll: load more results when scrolling near bottom
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isLoading) {
-          setDisplayCount(prev => prev + 25)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current)
-    }
-
-    return () => observer.disconnect()
-  }, [isLoading])
-
-  const filteredResults = React.useMemo(() => {
-    if (resultTypeFilter === 'all') {
-      return results
-    }
-
-    return results.filter((result) =>
-      resultTypeFilter === 'keyword'
-        ? result.type === 'exact'
-        : result.type === 'semantic'
-    )
-  }, [resultTypeFilter, results])
-
-  // Slice results for progressive rendering
-  const displayedResults = filteredResults.slice(0, displayCount)
-  const hasMore = displayCount < filteredResults.length
-
-  // Get rapper counts from backend (accurate across all matches, not just loaded results)
-  const rapperCounts = React.useMemo(() => {
-    return Object.entries(backendRapperCounts)
-      .filter(([name]) => name.trim().toUpperCase() !== 'HOST')
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-  }, [backendRapperCounts])
-
-  // Split rappers into top N and rest
-  const TOP_RAPPERS_COUNT = 5
-  const topRappers = rapperCounts.slice(0, TOP_RAPPERS_COUNT)
-  const remainingRappers = rapperCounts.slice(TOP_RAPPERS_COUNT)
+  const {
+    resultTypeFilter,
+    setResultTypeFilter,
+    selectedVideo,
+    setSelectedVideo,
+    correctionResult,
+    setCorrectionResult,
+    isMounted,
+    selectedRapper,
+    searchQuery,
+    setSearchQuery,
+    copiedSearchLink,
+    loadMoreRef,
+    searchInputRef,
+    isLoading,
+    results,
+    totalResults,
+    similarWords,
+    currentQuery,
+    featuredBars,
+    featuredLoading,
+    isShuffling,
+    popularQueries,
+    recentSearches,
+    trendingRappers,
+    filteredResults,
+    displayedResults,
+    hasMore,
+    hasActiveSearch,
+    rapperCounts,
+    topRappers,
+    remainingRappers,
+    handleSearch,
+    handleRapperFilter,
+    handleCopySearchLink,
+    handleSimilarWordClick,
+    handleRemoveRecentSearch,
+    loadFeaturedBars,
+  } = useHomepage()
 
   if (!isMounted) return null
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto p-6 md:p-10">
-        <div className="max-w-5xl mx-auto space-y-12">
-          <section className="text-center space-y-6 py-10">
-            <h2 className="text-5xl md:text-7xl font-black font-headline tracking-tight max-w-4xl mx-auto leading-none">
-              SEARCH FOR THE <span className="text-primary underline decoration-primary/30 underline-offset-8">HARDEST BARS</span> IN BATTLE RAP
-            </h2>
-            <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-mono">
-              Neural database indexing bars by meaning, context, and style.
-            </p>
-            <div className="pt-6">
+      <main className="relative flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] grid-fade opacity-50" />
+
+        <div className="relative mx-auto flex max-w-6xl flex-col gap-8">
+          {hasActiveSearch ? (
+            <section className="sticky top-4 z-20 overflow-hidden rounded-[28px] border border-border/50 bg-background/75 p-4 shadow-2xl shadow-black/35 backdrop-blur-xl md:p-5">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+              <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                    <Search className="h-3.5 w-3.5" />
+                    Suchkonsole
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
+                      {currentQuery || "Punchlines durchsuchen"}
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                      {!isLoading && totalResults > 0
+                        ? `${totalResults.toLocaleString()} Treffer gefunden`
+                        : 'Suche nach Bedeutung, dann filtere mit Stichwort- oder Semantik-Filter und Rapper-Auswahl.'}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopySearchLink}
+                  disabled={!currentQuery}
+                  className="gap-2 self-start rounded-full border-border/50 bg-background/40"
+                >
+                  {copiedSearchLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copiedSearchLink ? "Kopiert" : "Link kopieren"}
+                </Button>
+              </div>
+
               <SearchControls
                 onSearch={handleSearch}
                 isLoading={isLoading}
                 value={searchQuery}
                 onValueChange={setSearchQuery}
                 inputRef={searchInputRef}
+                compact
               />
+
               {!isLoading && currentQuery && (
                 <SimilarWords
-                  words={similarWords.slice(0, 3)}
+                  words={similarWords.slice(0, 4)}
                   onWordClick={handleSimilarWordClick}
                   isLoading={isLoading}
                 />
               )}
-              {!currentQuery && !isLoading && (recentSearches.length > 0 || popularQueries.length > 0) && (
-                <div className="mt-4 space-y-2">
-                  {recentSearches.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Recent
-                      </span>
-                      {recentSearches.map((q) => (
-                        <span key={q} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200">
-                          <button
-                            onClick={() => {
-                              setSearchQuery(q)
-                              handleSearch(q, 'semantic')
-                            }}
-                          >
-                            {q}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              removeRecentSearch(q)
-                              setRecentSearches(getRecentSearches())
-                            }}
-                            className="text-muted-foreground/50 hover:text-foreground ml-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+            </section>
+          ) : (
+            <section className="relative overflow-hidden rounded-[36px] border border-border/50 bg-card/40 px-6 py-8 shadow-2xl shadow-black/25 backdrop-blur-md md:px-10 md:py-12">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
+              <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+              <div className="absolute left-0 top-24 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
+
+              <div className="relative space-y-8">
+                <div className="space-y-5 text-center">
+                  <div className="inline-flex items-center gap-3 rounded-full border border-border/40 bg-background/30 px-4 py-2">
+                    <Image src="/battledex-logo.png" alt="BattleDex" width={24} height={24} className="h-6 w-6 rounded-sm object-cover" />
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                      Punchline-Suche
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[0.95] tracking-tight md:text-7xl">
+                      Finde
+                      <span className="block text-primary">Punchlines</span>
+                    </h1>
+                    <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
+                      BattleDex durchsucht Bars nach Angle, Inhalt und Sprache — auch wenn du den genauen Wortlaut nicht kennst.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mx-auto max-w-3xl space-y-5">
+                  <SearchControls
+                    onSearch={handleSearch}
+                    isLoading={isLoading}
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                    inputRef={searchInputRef}
+                  />
+
+                  <div className="flex items-center justify-center gap-4">
+                    {LEAGUE_MARKS.map((league) => (
+                      <div
+                        key={league.name}
+                        className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-background/40"
+                      >
+                        {league.logo ? (
+                          <img src={league.logo} alt={league.name} className="h-12 w-12 object-cover" />
+                        ) : (
+                          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground">
+                            {league.name}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {!currentQuery && !isLoading && (recentSearches.length > 0 || popularQueries.length > 0) && (
+                  <div className="mx-auto max-w-3xl space-y-3">
+                    {recentSearches.length > 0 && (
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          Zuletzt gesucht
                         </span>
-                      ))}
-                    </div>
-                  )}
-                  {popularQueries.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        Trending
-                      </span>
-                      {popularQueries.map(({ query }) => (
-                        <button
-                          key={query}
-                          onClick={() => {
-                            setSearchQuery(query)
-                            handleSearch(query, 'semantic')
-                          }}
-                          className="px-3 py-1 rounded-full text-sm bg-card/60 border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all duration-200"
-                        >
-                          {query}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
+                        {recentSearches.map((q) => (
+                          <span
+                            key={q}
+                            className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
+                          >
+                            <button
+                              onClick={() => {
+                                setSearchQuery(q)
+                                handleSearch(q, 'semantic')
+                              }}
+                            >
+                              {q}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRemoveRecentSearch(q)
+                              }}
+                              className="ml-0.5 text-muted-foreground/50 hover:text-foreground"
+                              aria-label={`Suche „${q}" entfernen`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-          {/* Featured Bars - show when no search active */}
-          {!currentQuery && !isLoading && (
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Featured Bars
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadFeaturedBars}
-                  disabled={isShuffling}
-                  className="gap-2"
-                >
-                  <Shuffle className={`w-4 h-4 ${isShuffling ? 'animate-spin' : ''}`} />
-                  Shuffle
-                </Button>
+                    {popularQueries.length > 0 && (
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                          <TrendingUp className="h-3.5 w-3.5" />
+                          Beliebt
+                        </span>
+                        {popularQueries.map(({ query }) => (
+                          <button
+                            key={query}
+                            onClick={() => {
+                              setSearchQuery(query)
+                              handleSearch(query, 'semantic')
+                            }}
+                            className="rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
+                          >
+                            {query}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              {featuredLoading ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {[1, 2, 3, 4].map(i => (
-                    <PunchlineCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {featuredBars.map((result) => (
-                    <PunchlineCard
-                      key={result.id}
-                      result={result}
-                      searchQuery=""
-                      onPlayVideo={setSelectedVideo}
-                      onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
-                      onCorrection={(result) => setCorrectionResult(result)}
-                    />
-                  ))}
-                </div>
-              )}
+            </section>
+          )}
 
-              {/* Trending Rappers */}
-              {trendingRappers.length > 0 && (
-                <div className="pt-4">
-                  <h3 className="text-lg font-bold font-headline flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-primary" />
-                    Trending Rappers
+          {!hasActiveSearch && (
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-2xl font-bold font-headline">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    Zufällige Bars
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadFeaturedBars}
+                    disabled={isShuffling}
+                    className="gap-2 rounded-full border-border/50 bg-background/40"
+                  >
+                    <Shuffle className={`h-4 w-4 ${isShuffling ? 'animate-spin' : ''}`} />
+                    Neue Bars
+                  </Button>
+                </div>
+
+                {featuredLoading ? (
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {[1, 2, 3, 4].map(i => (
+                      <PunchlineCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {featuredBars.map((result) => (
+                      <PunchlineCard
+                        key={result.id}
+                        result={result}
+                        searchQuery=""
+                        onPlayVideo={setSelectedVideo}
+                        onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
+                        onCorrection={(result) => setCorrectionResult(result)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
+                  <h3 className="mb-4 flex items-center gap-2 text-lg font-bold font-headline">
+                    <Users className="h-4 w-4 text-primary" />
+                    Beliebte Rapper
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {trendingRappers.map(({ name, battle_count }) => (
                       <Link
                         key={name}
                         href={`/rappers/${encodeURIComponent(name)}`}
-                        className="px-4 py-2 rounded-lg text-sm font-semibold bg-card/50 border border-border/30 text-foreground hover:border-primary/40 hover:text-primary transition-all duration-200 flex items-center gap-2"
+                        className="inline-flex items-center gap-2 rounded-full border border-border/30 bg-background/35 px-4 py-2 text-sm font-semibold text-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
                       >
                         {name}
                         {battle_count > 0 && (
-                          <span className="text-[10px] text-muted-foreground">{battle_count} battles</span>
+                          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                            {battle_count} Battles
+                          </span>
                         )}
                       </Link>
                     ))}
                   </div>
                 </div>
-              )}
+
+                <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
+                  <h3 className="mb-3 text-lg font-bold font-headline">Tipps zur Suche</h3>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>Nutze Konzepte statt exakter Phrasen: probiere „Verrat", „Vater-Angle" oder „Box-Rebuttal".</p>
+                    <p>Starte semantisch, dann grenze mit Rapper-Filtern ein oder wechsle zu Stichwort-Suche, wenn du den genauen Wortlaut kennst.</p>
+                    <p>Nutze die Wortvorschläge, um bessere Formulierungen zu finden, ohne neu zu starten.</p>
+                  </div>
+                </div>
+              </div>
             </section>
           )}
 
-          {(currentQuery || isLoading) && (
-          <section className="space-y-8">
-            <div className="border-b border-border/40 pb-6 bg-card/20 rounded-t-2xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                    <span className="text-primary">#</span>
-                    Results
-                    {selectedRapper && (
-                      <span className="text-base font-normal text-muted-foreground">
-                        • Filtered by {selectedRapper}
-                      </span>
-                    )}
-                  </h3>
+          {hasActiveSearch && (
+            <section className="space-y-6">
+              <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
+                <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold font-headline">Ergebnisse filtern</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Wechsle zwischen allen Treffern, exaktem Wortlaut und semantischen Ergebnissen.
+                    </p>
+                  </div>
+                  {selectedRapper && (
+                    <button
+                      onClick={() => handleRapperFilter(null)}
+                      className="inline-flex items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
+                      aria-label={`Filter für ${selectedRapper} entfernen`}
+                    >
+                      <span>{selectedRapper}</span>
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-              </div>
 
-              {results.length > 0 && (
-                <>
-                  <div className="space-y-2 mb-6">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Filter Results
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { key: 'all', label: 'All' },
-                        { key: 'keyword', label: 'Keyword' },
-                        { key: 'semantic', label: 'Semantic' },
-                      ].map(({ key, label }) => (
-                        <button
-                          key={key}
-                          onClick={() => setResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                            resultTypeFilter === key
-                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                              : 'bg-card/50 text-foreground hover:bg-card border border-border/30'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: 'all', label: 'Alle' },
+                      { key: 'keyword', label: 'Stichwort' },
+                      { key: 'semantic', label: 'Semantisch' },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                          resultTypeFilter === key
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                            : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
 
                   {rapperCounts.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                          Filter by Rapper
-                        </h4>
-                        {selectedRapper && (
-                          <button
-                            onClick={() => handleRapperFilter(null)}
-                            className="text-xs text-primary hover:text-primary/80 font-semibold"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        {/* Top rappers as buttons */}
-                        <div className="flex flex-wrap gap-2">
-                          {topRappers.map(({ name }) => (
-                            <div key={name} className="flex items-center gap-1">
-                              <button
-                                onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                                  selectedRapper === name
-                                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
-                                    : 'bg-card/50 text-foreground hover:bg-card hover:scale-102 border border-border/30'
-                                }`}
-                              >
-                                {name}
-                              </button>
-                              <Link
-                                href={`/rappers/${encodeURIComponent(name)}`}
-                                className="text-muted-foreground/40 hover:text-primary transition-colors p-1"
-                                title={`View ${name}'s profile`}
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                              </Link>
-                            </div>
-                          ))}
-
-                          {/* Dropdown for remaining rappers */}
-                          {remainingRappers.length > 0 && (
-                            <RapperFilterDropdown
-                              rappers={remainingRappers}
-                              selectedRapper={selectedRapper}
-                              onSelect={(name) => handleRapperFilter(selectedRapper === name ? null : name)}
-                            />
-                          )}
-                        </div>
-
-                        {/* Show which rapper is selected from dropdown */}
-                        {selectedRapper && !topRappers.find(r => r.name === selectedRapper) && (
-                          <div className="text-xs text-muted-foreground">
-                            Filtered by: <span className="font-semibold text-primary">{selectedRapper}</span>
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                        Nach Rapper filtern
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {topRappers.map(({ name }) => (
+                          <div key={name} className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
+                              className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                                selectedRapper === name
+                                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                                  : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                              }`}
+                            >
+                              {name}
+                            </button>
+                            <Link
+                              href={`/rappers/${encodeURIComponent(name)}`}
+                              className="p-1 text-muted-foreground/40 transition-colors hover:text-primary"
+                              title={`Profil von ${name}`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
                           </div>
+                        ))}
+
+                        {remainingRappers.length > 0 && (
+                          <RapperFilterDropdown
+                            rappers={remainingRappers}
+                            selectedRapper={selectedRapper}
+                            onSelect={(name) => handleRapperFilter(selectedRapper === name ? null : name)}
+                          />
                         )}
                       </div>
                     </div>
                   )}
-                </>
-              )}
-            </div>
-
-            {isLoading ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {[1, 2, 3, 4].map(i => (
-                  <PunchlineCardSkeleton key={i} />
-                ))}
+                </div>
               </div>
-            ) : filteredResults.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {displayedResults.map((result) => (
-                    <PunchlineCard
-                      key={result.id}
-                      result={result}
-                      searchQuery={currentQuery}
-                      onPlayVideo={setSelectedVideo}
-                      onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
-                      onCorrection={(result) => setCorrectionResult(result)}
-                    />
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  {[1, 2, 3, 4].map(i => (
+                    <PunchlineCardSkeleton key={i} />
                   ))}
                 </div>
-                {hasMore && (
-                  <div ref={loadMoreRef} className="py-8 text-center">
-                    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent shadow-lg shadow-primary/20"></div>
-                    <p className="mt-3 text-sm text-muted-foreground font-medium">Loading more results...</p>
+              ) : filteredResults.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {displayedResults.map((result) => (
+                      <PunchlineCard
+                        key={result.id}
+                        result={result}
+                        searchQuery={currentQuery}
+                        onPlayVideo={setSelectedVideo}
+                        onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
+                        onCorrection={(result) => setCorrectionResult(result)}
+                      />
+                    ))}
                   </div>
-                )}
-                {!hasMore && filteredResults.length > 25 && <div className="py-8 text-center" />}
-              </>
-            ) : results.length > 0 ? (
-              <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
-                <div className="bg-secondary/20 p-8 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">
-                  <Search className="w-16 h-16 text-muted-foreground" />
+
+                  {hasMore && (
+                    <div ref={loadMoreRef} className="py-8 text-center">
+                      <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent shadow-lg shadow-primary/20" />
+                      <p className="mt-3 text-sm font-medium text-muted-foreground">Weitere Ergebnisse laden...</p>
+                    </div>
+                  )}
+                </>
+              ) : results.length > 0 ? (
+                <div className="rounded-[28px] border border-dashed border-border/40 bg-card/20 py-24 text-center backdrop-blur-sm">
+                  <div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-secondary/20 p-8">
+                    <Search className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-muted-foreground">Keine {resultTypeFilter === 'keyword' ? 'Stichwort' : 'semantischen'}-Ergebnisse in diesem Set.</h3>
+                  <p className="mx-auto mt-3 max-w-sm text-muted-foreground">
+                    Wechsle den Filter oder erweitere die Suchanfrage.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-muted-foreground">No {resultTypeFilter} results in this set.</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto mt-3">
-                  Switch to another result filter or broaden the search query.
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40 backdrop-blur-sm">
-                <div className="bg-secondary/20 p-8 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">
-                  <Search className="w-16 h-16 text-muted-foreground" />
+              ) : (
+                <div className="rounded-[28px] border border-dashed border-border/40 bg-card/20 py-24 text-center backdrop-blur-sm">
+                  <div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-secondary/20 p-8">
+                    <Search className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-muted-foreground">Keine Treffer gefunden.</h3>
+                  <p className="mx-auto mt-3 max-w-sm text-muted-foreground">
+                    Versuche breitere Begriffe wie „Boxen", „Mutter-Angle" oder „Tiervergleiche" — die semantische Suche findet auch verwandte Inhalte.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-muted-foreground">No bars matched your search.</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto mt-3">
-                  Try searching for broader terms like "boxing" or "animal" or check your spelling.
-                </p>
-              </div>
-            )}
-          </section>
+              )}
+            </section>
           )}
         </div>
       </main>

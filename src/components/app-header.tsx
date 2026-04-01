@@ -1,14 +1,16 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Swords, BarChart3, Users } from "lucide-react"
+import { Swords, BarChart3, Users, Brain } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/battles", label: "Browse Battles", icon: Swords },
-  { href: "/rappers", label: "Rappers", icon: Users },
-  { href: "/stats", label: "DB Stats", icon: BarChart3 },
+  { href: "/quiz", label: "Quiz", icon: Brain },
+  { href: "/battles", label: "Battles", icon: Swords },
+  { href: "/rappers", label: "Rapper", icon: Users },
+  { href: "/stats", label: "Statistik", icon: BarChart3 },
 ]
 
 export function AppHeader() {
@@ -18,9 +20,11 @@ export function AppHeader() {
     <header className="h-20 flex items-center justify-between px-6 md:px-10 border-b border-border/20 backdrop-blur-md sticky top-0 z-20">
       <div className="flex items-center gap-3">
         <Link href="/">
-          <img
+          <Image
             src="/battledex-logo.png"
             alt="BattleDex"
+            width={48}
+            height={48}
             className="h-12 w-auto object-contain cursor-pointer"
           />
         </Link>
