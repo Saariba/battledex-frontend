@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShareButton } from "@/components/share-button"
-import { Play, ChevronDown, ChevronUp, Mic2, Swords, ExternalLink, Waves } from "lucide-react"
+import { Play, ChevronDown, ChevronUp, Mic2, Swords, Waves } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { highlightKeywords } from "@/lib/highlight"
 
@@ -16,11 +16,10 @@ interface PunchlineCardProps {
   result: SearchResult
   searchQuery: string
   onPlayVideo: (result: SearchResult) => void
-  onRapperClick?: (rapperName: string) => void
   onCorrection?: (result: SearchResult) => void
 }
 
-export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick, onCorrection }: PunchlineCardProps) {
+export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }: PunchlineCardProps) {
   const [showFullContext, setShowFullContext] = useState(false)
 
   // Highlight keywords only for exact/keyword matches
@@ -88,7 +87,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
                 {result.type === 'exact' ? 'Stichwort' : result.type === 'random' ? 'Zufällig' : 'Semantisch'}
               </Badge>
             )}
-          {typeof result.score === 'number' && (
+          {typeof result.score === 'number' && result.type !== 'random' && (
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em] text-muted-foreground">
               <Waves className="h-3 w-3 text-primary" />
               <span>{scoreLabel}</span>
@@ -106,18 +105,11 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           <div className="rounded-full bg-primary/15 p-1.5 text-primary">
             <Mic2 className="h-3.5 w-3.5" />
           </div>
-          <button
-            onClick={() => onRapperClick?.(result.rapper.name)}
+          <Link
+            href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
             className="rounded px-2 py-0.5 text-sm font-bold uppercase tracking-[0.16em] text-primary transition-all duration-300 hover:bg-primary/10 hover:text-primary/80"
           >
             {result.rapper.name}
-          </button>
-          <Link
-            href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
-            className="text-muted-foreground/50 hover:text-primary transition-colors"
-            title={`Profil von ${result.rapper.name}`}
-          >
-            <ExternalLink className="w-3 h-3" />
           </Link>
         </div>
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-border/40 bg-black/20 p-4">

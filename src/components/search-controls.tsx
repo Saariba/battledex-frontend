@@ -116,7 +116,7 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         </div>
         <Input
           ref={inputRef}
-          placeholder="Punchlines suchen (z.B. 'Boxen', 'Schach-Metaphern' oder 'Vater-Angle')"
+          placeholder="Punchlines suchen..."
           className={`pl-12 pr-32 bg-card/70 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all duration-300 shadow-lg ${
             compact ? 'h-12 text-base' : 'h-14 text-lg'
           }`}

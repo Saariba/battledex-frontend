@@ -2,7 +2,6 @@
 
 import React, { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import dynamic from "next/dynamic"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
@@ -13,7 +12,7 @@ import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
 const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
 import { useHomepage } from "@/hooks/use-homepage"
-import { Search, ExternalLink, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check, FlaskConical } from "lucide-react"
+import { Search, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check, FlaskConical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const SEMANTIC_BETA_DISMISSED_KEY = 'battledex_semantic_beta_dismissed'
@@ -149,13 +148,6 @@ function RapBattleAppInner() {
 
               <div className="relative space-y-8">
                 <div className="space-y-5 text-center">
-                  <div className="inline-flex items-center gap-3 rounded-full border border-border/40 bg-background/30 px-4 py-2">
-                    <Image src="/battledex-logo.png" alt="BattleDex" width={24} height={24} className="h-6 w-6 rounded-sm object-cover" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                      Punchline-Suche
-                    </span>
-                  </div>
-
                   <div className="space-y-4">
                     <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[0.95] tracking-tight md:text-7xl">
                       Finde
@@ -290,7 +282,7 @@ function RapBattleAppInner() {
                         result={result}
                         searchQuery=""
                         onPlayVideo={setSelectedVideo}
-                        onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
+
                         onCorrection={(result) => setCorrectionResult(result)}
                       />
                     ))}
@@ -322,14 +314,7 @@ function RapBattleAppInner() {
                   </div>
                 </div>
 
-                <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
-                  <h3 className="mb-3 text-lg font-bold font-headline">Tipps zur Suche</h3>
-                  <div className="space-y-3 text-sm text-muted-foreground">
-                    <p>Nutze Konzepte statt exakter Phrasen: probiere „Verrat", „Vater-Angle" oder „Box-Rebuttal".</p>
-                    <p>Starte semantisch, dann grenze mit Rapper-Filtern ein oder wechsle zu Stichwort-Suche, wenn du den genauen Wortlaut kennst.</p>
-                    <p>Nutze die Wortvorschläge, um bessere Formulierungen zu finden, ohne neu zu starten.</p>
-                  </div>
-                </div>
+
               </div>
             </section>
           )}
@@ -410,25 +395,17 @@ function RapBattleAppInner() {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {topRappers.map(({ name }) => (
-                          <div key={name} className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
-                              className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
-                                selectedRapper === name
-                                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                                  : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
-                              }`}
-                            >
-                              {name}
-                            </button>
-                            <Link
-                              href={`/rappers/${encodeURIComponent(name)}`}
-                              className="p-1 text-muted-foreground/40 transition-colors hover:text-primary"
-                              title={`Profil von ${name}`}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          </div>
+                          <button
+                            key={name}
+                            onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                              selectedRapper === name
+                                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                                : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                            }`}
+                          >
+                            {name}
+                          </button>
                         ))}
 
                         {remainingRappers.length > 0 && (
@@ -459,7 +436,7 @@ function RapBattleAppInner() {
                         result={result}
                         searchQuery={currentQuery}
                         onPlayVideo={setSelectedVideo}
-                        onRapperClick={(rapperName) => handleRapperFilter(rapperName)}
+
                         onCorrection={(result) => setCorrectionResult(result)}
                       />
                     ))}
