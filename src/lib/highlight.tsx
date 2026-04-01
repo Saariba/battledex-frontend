@@ -31,7 +31,7 @@ export function highlightKeywords(text: string, query: string): React.ReactNode 
 
     if (shouldHighlight) {
       parts.push(
-        <span key={match.index} className="text-yellow-500 font-bold">
+        <span key={match.index} style={{ color: '#eab308' }} className="font-bold">
           {token}
         </span>
       )
