@@ -17,7 +17,9 @@ export const searchService = {
     query: string,
     topK: number = 20,
     mode: 'semantic' | 'keyword' = 'semantic',
-    filters?: { rapper_name?: string }
+    filters?: { rapper_name?: string },
+    signal?: AbortSignal,
+    offset: number = 0,
   ): Promise<{ results: SearchResult[], total: number, rapperCounts: Record<string, number> }> {
     const backendSearchMode = mode === 'keyword' ? 'text' : 'hybrid'
 
@@ -26,6 +28,7 @@ export const searchService = {
       top_k: topK,
       search_mode: backendSearchMode,
       filters,
+      offset,
     }
 
     const response = await apiRequest<BackendSearchResponse>(
@@ -33,12 +36,13 @@ export const searchService = {
       {
         method: 'POST',
         body: requestBody,
+        signal,
       }
     )
 
     return {
       results: adaptBackendResults(response.results),
-      total: response.total_text_matches,
+      total: response.total,
       rapperCounts: response.rapper_counts || {},
     }
   },
@@ -57,10 +61,25 @@ export const searchService = {
    * Fetch autocomplete suggestions
    */
   async autocomplete(query: string): Promise<string[]> {
-    const response = await apiRequest<{ suggestions: string[], query: string }>(
+    const response = await apiRequest<{ suggestions: unknown[], query: string }>(
       `${config.endpoints.autocomplete}?q=${encodeURIComponent(query)}`
     )
     return response.suggestions
+      .map((suggestion) => {
+        if (typeof suggestion === 'string') {
+          return suggestion
+        }
+        if (
+          suggestion &&
+          typeof suggestion === 'object' &&
+          'text' in suggestion &&
+          typeof (suggestion as { text: unknown }).text === 'string'
+        ) {
+          return (suggestion as { text: string }).text
+        }
+        return ''
+      })
+      .filter((text) => text.length > 0)
   },
 
   /**

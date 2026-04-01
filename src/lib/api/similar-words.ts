@@ -16,12 +16,14 @@ export const similarWordsService = {
    */
   async getSimilarWords(
     query: string,
-    limit: number = 10
+    limit: number = 10,
+    signal?: AbortSignal,
   ): Promise<SimilarWordsResponse> {
     const url = `${config.endpoints.similarWords}?query=${encodeURIComponent(query)}&limit=${limit}`
 
     return apiRequest<SimilarWordsResponse>(url, {
       method: 'GET',
+      signal,
     })
   },
 }

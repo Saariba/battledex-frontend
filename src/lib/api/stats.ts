@@ -16,25 +16,26 @@ export interface StatsResponse {
 export interface NounStat {
   noun: string
   count: number
-  battles_count: number
-  rappers_count: number
 }
 
 export interface NounStatsResponse {
-  nouns: NounStat[]
+  most_common: NounStat[]
+  least_common: NounStat[]
   total_unique_nouns: number
 }
 
 export const statsService = {
-  async getStats(): Promise<StatsResponse> {
+  async getStats(signal?: AbortSignal): Promise<StatsResponse> {
     return await apiRequest<StatsResponse>(config.endpoints.stats, {
       method: 'GET',
+      signal,
     })
   },
 
-  async getNounStats(limit: number = 20): Promise<NounStatsResponse> {
+  async getNounStats(limit: number = 20, signal?: AbortSignal): Promise<NounStatsResponse> {
     return await apiRequest<NounStatsResponse>(
-      `${config.endpoints.nounStats}?limit=${limit}`
+      `${config.endpoints.nounStats}?limit=${limit}`,
+      { signal }
     )
   },
 }

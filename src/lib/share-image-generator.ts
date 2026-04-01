@@ -3,7 +3,6 @@
  * Creates downloadable Genius-style lyric card images
  */
 
-import html2canvas from 'html2canvas'
 import type { SearchResult } from '@/lib/types'
 import { extractYouTubeId } from '@/lib/api/utils'
 
@@ -31,7 +30,10 @@ export async function generateShareImage({
   // 3. Wait for images to load
   await waitForImagesToLoad(container)
 
-  // 4. Generate canvas from HTML
+  // 4. Dynamically import html2canvas to avoid bundling it in the main chunk
+  const { default: html2canvas } = await import('html2canvas')
+
+  // 5. Generate canvas from HTML
   const canvas = await html2canvas(container, {
     width: 1080,
     height: 1080,
@@ -41,10 +43,10 @@ export async function generateShareImage({
     useCORS: true, // Allow cross-origin images
   })
 
-  // 5. Remove hidden element
+  // 6. Remove hidden element
   document.body.removeChild(container)
 
-  // 6. Convert canvas to blob
+  // 7. Convert canvas to blob
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {

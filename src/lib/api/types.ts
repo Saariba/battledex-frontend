@@ -6,6 +6,7 @@
 export interface BackendSearchRequest {
   query: string
   top_k?: number
+  offset?: number
   search_mode?: 'text' | 'semantic' | 'hybrid'
   filters?: {
     rapper_name?: string
@@ -84,4 +85,78 @@ export interface SimilarWord {
 export interface SimilarWordsResponse {
   query: string
   similar_words: SimilarWord[]
+}
+
+export interface DailyQuizPayload {
+  quiz_id: string
+  day_key: string
+  line: string
+  line_id: number
+  battle_id: string
+  video_url: string
+  timestamp: number
+  hint_1_platform: string
+  hint_2_year: number | null
+  hint_3_context_before: string | null
+  hint_3_context_after: string | null
+  hint_4_opponent: string | null
+}
+
+export interface DailyQuizGuessRequest {
+  quiz_id: string
+  guess_name: string
+  prior_guesses: string[]
+}
+
+export interface DailyQuizGuessResponse {
+  correct: boolean
+  guesses_used: number
+  guesses_remaining: number
+  completed: boolean
+  correct_rapper_name: string | null
+  battle_title: string | null
+}
+
+export interface QuizRapperSuggestion {
+  id: string
+  name: string
+}
+
+export interface QuizRapperSuggestionsResponse {
+  suggestions: QuizRapperSuggestion[]
+}
+
+export interface DailyChallengeLinePayload {
+  challenge_id: string
+  day_key: string
+  line_index: number
+  total_lines: number
+  line: string
+  line_id: number
+  battle_id: string
+  video_url: string
+  timestamp: number
+  hint_1_platform: string
+  hint_2_year: number | null
+  hint_3_context_before: string | null
+  hint_3_context_after: string | null
+  hint_4_opponent: string | null
+}
+
+export interface DailyChallengeGuessRequest {
+  challenge_id: string
+  line_index: number
+  guess_name: string
+  prior_guesses: string[]
+}
+
+export interface DailyChallengeGuessResponse {
+  correct: boolean
+  guesses_used: number
+  guesses_remaining: number
+  completed_line: boolean
+  failed_run: boolean
+  challenge_complete: boolean
+  correct_rapper_name: string | null
+  battle_title: string | null
 }
