@@ -23,7 +23,7 @@ export function SimilarWords({ words, onWordClick, isLoading }: SimilarWordsProp
           onClick={() => onWordClick(word)}
           className="rounded-full border border-border/30 bg-background/40 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-300 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground"
         >
-          {word} <span className="opacity-50">({count})</span>
+          {word} <span className="opacity-50">({count.toLocaleString('de-DE')})</span>
         </button>
       ))}
       </div>
