@@ -11,8 +11,10 @@ interface BackendRapperBattle {
   title: string
   video_url: string
   event_date?: string
+  upload_date?: string
   opponent_names?: string[]
   line_count?: number
+  youtube_views?: number
 }
 
 interface BackendRapperProfile {
@@ -20,6 +22,8 @@ interface BackendRapperProfile {
   aka?: string[]
   total_battles: number
   total_lines: number
+  total_youtube_views: number
+  avg_youtube_views: number
   battles: BackendRapperBattle[]
 }
 
@@ -28,8 +32,10 @@ export interface RapperBattle {
   title: string
   videoUrl: string
   date?: string
+  uploadDate?: string
   opponentNames: string[]
   lineCount: number
+  youtubeViews?: number
 }
 
 export interface RapperProfile {
@@ -37,6 +43,8 @@ export interface RapperProfile {
   aliases: string[]
   totalBattles: number
   totalLines: number
+  totalYoutubeViews: number
+  avgYoutubeViews: number
   battles: RapperBattle[]
 }
 
@@ -46,13 +54,17 @@ function adaptRapperProfile(backend: BackendRapperProfile): RapperProfile {
     aliases: backend.aka || [],
     totalBattles: backend.total_battles,
     totalLines: backend.total_lines,
+    totalYoutubeViews: backend.total_youtube_views,
+    avgYoutubeViews: backend.avg_youtube_views,
     battles: backend.battles.map(b => ({
       id: b.battle_id,
       title: b.title,
       videoUrl: b.video_url,
       date: b.event_date,
+      uploadDate: b.upload_date,
       opponentNames: b.opponent_names ?? [],
       lineCount: b.line_count ?? 0,
+      youtubeViews: b.youtube_views,
     })),
   }
 }

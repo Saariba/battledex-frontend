@@ -12,6 +12,8 @@ export interface Battle {
   youtubeUrl: string;
   thumbnailUrl?: string;
   date?: string;
+  uploadDate?: string;
+  youtubeViews?: number;
 }
 
 export interface Punchline {

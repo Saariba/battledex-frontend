@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { battlesService } from '@/lib/api/battles'
 import type { Battle } from '@/lib/types'
 import { extractYouTubeId } from '@/lib/api/utils'
@@ -9,7 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Play, Search, X, Swords, FileText } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ChevronLeft, ChevronRight, Play, Search, X, Swords, FileText, CalendarDays, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { battlesCache, generateCacheKey } from '@/lib/cache'
 
@@ -23,6 +25,7 @@ export default function BattlesPage() {
   const [isMounted, setIsMounted] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortValue, setSortValue] = useState('date_desc')
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export default function BattlesPage() {
   useEffect(() => {
     if (!isMounted) return
     loadBattles()
-  }, [currentPage, searchQuery, isMounted])
+  }, [currentPage, searchQuery, sortValue, isMounted])
 
   const clearSearch = useCallback(() => {
     setSearchInput('')
@@ -60,7 +63,7 @@ export default function BattlesPage() {
       const offset = (currentPage - 1) * BATTLES_PER_PAGE
 
       // Try cache first
-      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset, searchQuery)
+      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset, searchQuery, sortValue)
       const cached = battlesCache.get<{ battles: Battle[], total: number }>(cacheKey)
 
       if (cached) {
@@ -74,7 +77,8 @@ export default function BattlesPage() {
       const response = await battlesService.listBattles(
         BATTLES_PER_PAGE,
         offset,
-        searchQuery || undefined
+        searchQuery || undefined,
+        sortValue
       )
 
       const battlesList = response.battles || []
@@ -87,7 +91,7 @@ export default function BattlesPage() {
       setTotal(totalCount)
     } catch (error) {
       console.error('Failed to load battles:', error)
-      toast.error('Failed to load battles. Please try again.')
+      toast.error('Battles konnten nicht geladen werden. Bitte erneut versuchen.')
       setBattles([])
       setTotal(0)
     } finally {
@@ -119,39 +123,54 @@ export default function BattlesPage() {
           {/* Page Header */}
           <div className="space-y-4">
             <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← Back to Search
+              ← Zurück zur Suche
             </Link>
             <div>
               <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">
-                All <span className="text-primary">Battles</span>
+                Alle <span className="text-primary">Battles</span>
               </h1>
               <p className="text-muted-foreground text-lg mt-2">
                 {searchQuery
-                  ? `Found ${total.toLocaleString()} battle${total !== 1 ? 's' : ''} matching "${searchQuery}"`
+                  ? `${total.toLocaleString()} Battle${total !== 1 ? 's' : ''} gefunden für „${searchQuery}"`
                   : total > 0
-                    ? `Browse ${total.toLocaleString()} battles available in the database`
-                    : 'Loading battles...'}
+                    ? `${total.toLocaleString()} Battles in der Datenbank`
+                    : 'Battles werden geladen...'}
               </p>
             </div>
 
-            {/* Search Input */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                type="text"
-                placeholder="Search battles..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9 pr-9 bg-card/60 border-border/50 focus:border-primary/50"
-              />
-              {searchInput && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            {/* Search Input & Sort */}
+            <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder="Battles suchen..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-9 pr-9 bg-card/60 border-border/50 focus:border-primary/50"
+                />
+                {searchInput && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Select value={sortValue} onValueChange={(value) => { setSortValue(value); setCurrentPage(1) }}>
+                <SelectTrigger className="w-full sm:w-[220px] bg-card/60 border-border/50">
+                  <SelectValue placeholder="Sortierung" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Neueste zuerst</SelectItem>
+                  <SelectItem value="date_asc">Älteste zuerst</SelectItem>
+                  <SelectItem value="views_desc">Meiste Views</SelectItem>
+                  <SelectItem value="views_asc">Wenigste Views</SelectItem>
+                  <SelectItem value="title_asc">Titel A-Z</SelectItem>
+                  <SelectItem value="title_desc">Titel Z-A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -159,10 +178,10 @@ export default function BattlesPage() {
           {!isLoading && battles.length > 0 && total > 0 && (
             <div className="flex items-center justify-between border-b border-border/40 pb-4">
               <p className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * BATTLES_PER_PAGE) + 1} - {Math.min(currentPage * BATTLES_PER_PAGE, total)} of {total.toLocaleString()} battles
+                {((currentPage - 1) * BATTLES_PER_PAGE) + 1} – {Math.min(currentPage * BATTLES_PER_PAGE, total)} von {total.toLocaleString()} Battles
               </p>
               <p className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
+                Seite {currentPage} von {totalPages}
               </p>
             </div>
           )}
@@ -193,7 +212,7 @@ export default function BattlesPage() {
                   className="gap-2 transition-all duration-300"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  Previous
+                  Zurück
                 </Button>
 
                 <div className="flex items-center gap-2">
@@ -236,7 +255,7 @@ export default function BattlesPage() {
                   disabled={currentPage === totalPages}
                   className="gap-2 transition-all duration-300"
                 >
-                  Next
+                  Weiter
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -244,15 +263,15 @@ export default function BattlesPage() {
           ) : (
             <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40">
               <Swords className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-muted-foreground">No battles found</h3>
+              <h3 className="text-2xl font-bold text-muted-foreground">Keine Battles gefunden</h3>
               <p className="text-muted-foreground mt-2">
                 {searchQuery
-                  ? `No results for "${searchQuery}". Try a different search term.`
-                  : 'Check back later for updates'}
+                  ? `Keine Ergebnisse für „${searchQuery}". Versuche einen anderen Suchbegriff.`
+                  : 'Schau später nochmal vorbei'}
               </p>
               {searchQuery && (
                 <Button variant="outline" size="sm" className="mt-4" onClick={clearSearch}>
-                  Clear search
+                  Suche zurücksetzen
                 </Button>
               )}
             </div>
@@ -264,6 +283,15 @@ export default function BattlesPage() {
 
 interface BattleCardProps {
   battle: Battle
+}
+
+function formatGermanDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
 }
 
 function BattleCard({ battle }: BattleCardProps) {
@@ -284,10 +312,12 @@ function BattleCard({ battle }: BattleCardProps) {
             className="block relative aspect-video bg-gradient-to-br from-card to-background overflow-hidden cursor-pointer"
           >
             {thumbnailUrl ? (
-              <img
+              <Image
                 src={thumbnailUrl}
                 alt={battle.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -302,10 +332,12 @@ function BattleCard({ battle }: BattleCardProps) {
         ) : (
           <div className="relative aspect-video bg-gradient-to-br from-card to-background overflow-hidden">
             {thumbnailUrl ? (
-              <img
+              <Image
                 src={thumbnailUrl}
                 alt={battle.title}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -319,22 +351,36 @@ function BattleCard({ battle }: BattleCardProps) {
       <CardContent className="p-4 space-y-3">
         {/* League Badge */}
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
-            {battle.league === 'DLTLLY' ? (
-              <img
-                src="/league-dltlly.svg"
-                alt="DLTLLY"
-                className="w-3 h-3 mr-1 object-contain"
-              />
-            ) : (
+          {battle.league === 'DLTLLY' ? (
+            <img src="/league-dltlly.png" alt="DLTLLY" className="w-6 h-6 rounded-full object-cover" />
+          ) : battle.league === 'FOB' ? (
+            <img src="/league-fob.png" alt="FOB" className="w-6 h-6 rounded-full object-cover" />
+          ) : (
+            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
               <Swords className="w-3 h-3 mr-1" />
-            )}
-            {battle.league}
-          </Badge>
+              {battle.league}
+            </Badge>
+          )}
           {battle.date && (
             <span className="text-xs text-muted-foreground">
               {new Date(battle.date).getFullYear()}
             </span>
+          )}
+        </div>
+
+        {/* Upload Date & Views */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {battle.uploadDate && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CalendarDays className="w-3 h-3" />
+              {formatGermanDate(battle.uploadDate)}
+            </span>
+          )}
+          {battle.youtubeViews != null && (
+            <Badge variant="outline" className="text-[10px] font-code border-red-500/30 text-red-500">
+              <Eye className="w-3 h-3 mr-1" />
+              {battle.youtubeViews.toLocaleString('de-DE')} Views
+            </Badge>
           )}
         </div>
 
@@ -350,7 +396,7 @@ function BattleCard({ battle }: BattleCardProps) {
         <Link href={`/battles/${battle.id}`} className="flex-1">
           <Button variant="outline" size="sm" className="w-full">
             <FileText className="w-4 h-4 mr-2" />
-            Details
+            Details ansehen
           </Button>
         </Link>
         {battle.youtubeUrl && (

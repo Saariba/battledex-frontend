@@ -15,6 +15,8 @@ interface BackendBattle {
   video_url: string
   event_date?: string
   date?: string
+  upload_date?: string
+  youtube_views?: number
 }
 
 interface BackendBattlesResponse {
@@ -96,6 +98,8 @@ function adaptBattle(backendBattle: BackendBattle): Battle {
     youtubeUrl: backendBattle.video_url,
     thumbnailUrl: extractYouTubeThumbnail(backendBattle.video_url),
     date: backendBattle.event_date || backendBattle.date,
+    uploadDate: backendBattle.upload_date,
+    youtubeViews: backendBattle.youtube_views,
   }
 }
 
@@ -103,10 +107,12 @@ export const battlesService = {
   async listBattles(
     limit: number = 20,
     offset: number = 0,
-    search?: string
+    search?: string,
+    sort?: string
   ): Promise<BattlesResponse> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
     if (search) params.set('search', search)
+    if (sort) params.set('sort', sort)
     const url = `${config.endpoints.battles}?${params.toString()}`
 
     const response = await apiRequest<BackendBattlesResponse>(url, {
