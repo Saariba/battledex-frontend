@@ -30,18 +30,18 @@ export function CorrectionModal({ result, onClose }: CorrectionModalProps) {
   const handleSubmit = async () => {
     // Validate
     if (!suggestedContent.trim()) {
-      toast.error("Please enter a correction")
+      toast.error("Bitte gib eine Korrektur ein")
       return
     }
 
     if (suggestedContent.trim() === result.line) {
-      toast.error("Correction is the same as the original")
+      toast.error("Korrektur ist identisch mit dem Original")
       return
     }
 
     // Check if we have a line number (transcript_id)
     if (!result.line_number) {
-      toast.error("Cannot submit correction: missing line number")
+      toast.error("Korrektur kann nicht gesendet werden: Zeilennummer fehlt")
       return
     }
 
@@ -63,7 +63,7 @@ export function CorrectionModal({ result, onClose }: CorrectionModalProps) {
       } else if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error("Failed to submit correction")
+        toast.error("Korrektur konnte nicht gesendet werden")
       }
     } finally {
       setIsSubmitting(false)
@@ -75,17 +75,17 @@ export function CorrectionModal({ result, onClose }: CorrectionModalProps) {
       <DialogContent className="max-w-2xl bg-background border-primary/20">
         <DialogHeader>
           <DialogTitle className="text-primary font-headline">
-            Submit Lyric Correction
+            Lyric-Korrektur einreichen
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Help improve the accuracy of the database by suggesting a correction for this line.
+            Hilf mit, die Datenbank zu verbessern, indem du eine Korrektur für diese Zeile vorschlägst.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div>
             <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
-              Original Line
+              Original-Zeile
             </label>
             <div className="bg-card/50 border border-border/30 rounded-lg p-4">
               <p className="text-foreground italic">"{result.line}"</p>
@@ -97,17 +97,17 @@ export function CorrectionModal({ result, onClose }: CorrectionModalProps) {
 
           <div>
             <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
-              Your Correction
+              Deine Korrektur
             </label>
             <Textarea
               value={suggestedContent}
               onChange={(e) => setSuggestedContent(e.target.value)}
-              placeholder="Enter the corrected lyric..."
+              placeholder="Korrigierten Text eingeben..."
               className="min-h-24 bg-background border-border/50 focus:border-primary"
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Please ensure accuracy. Your correction will be reviewed before being applied.
+              Bitte auf Richtigkeit achten. Deine Korrektur wird geprüft, bevor sie übernommen wird.
             </p>
           </div>
         </div>
@@ -118,14 +118,14 @@ export function CorrectionModal({ result, onClose }: CorrectionModalProps) {
             onClick={onClose}
             disabled={isSubmitting}
           >
-            Cancel
+            Abbrechen
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="bg-primary hover:bg-primary/90"
           >
-            {isSubmitting ? "Submitting..." : "Submit Correction"}
+            {isSubmitting ? "Wird gesendet..." : "Korrektur absenden"}
           </Button>
         </DialogFooter>
       </DialogContent>

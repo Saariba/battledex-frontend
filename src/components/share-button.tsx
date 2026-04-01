@@ -26,10 +26,10 @@ export function ShareButton({
     try {
       setIsGenerating(true)
       await downloadShareImage(result)
-      toast.success('Image downloaded successfully!')
+      toast.success('Bild heruntergeladen!')
     } catch (error) {
       console.error('Failed to generate share image:', error)
-      toast.error('Failed to generate image. Please try again.')
+      toast.error('Bild konnte nicht erstellt werden. Bitte erneut versuchen.')
     } finally {
       setIsGenerating(false)
     }
@@ -49,7 +49,7 @@ export function ShareButton({
         <Share2 className="w-4 h-4" />
       )}
       {showLabel && (
-        <span className="ml-2">{isGenerating ? 'Generating...' : 'Share'}</span>
+        <span className="ml-2">{isGenerating ? 'Wird erstellt...' : 'Teilen'}</span>
       )}
     </Button>
   )

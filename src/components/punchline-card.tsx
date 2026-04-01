@@ -8,8 +8,9 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShareButton } from "@/components/share-button"
-import { Play, ChevronDown, ChevronUp, Mic2, Swords, ExternalLink } from "lucide-react"
+import { Play, ChevronDown, ChevronUp, Mic2, Swords, ExternalLink, Waves } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { highlightKeywords } from "@/lib/highlight"
 
 interface PunchlineCardProps {
   result: SearchResult
@@ -17,56 +18,6 @@ interface PunchlineCardProps {
   onPlayVideo: (result: SearchResult) => void
   onRapperClick?: (rapperName: string) => void
   onCorrection?: (result: SearchResult) => void
-}
-
-/**
- * Highlight matching keywords in text for exact/keyword matches
- */
-function highlightKeywords(text: string, query: string): React.ReactNode {
-  if (!query || !text) return text
-
-  const queryWords = query
-    .toLocaleLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 0)
-
-  if (queryWords.length === 0) return text
-
-  const regex = /[\p{L}\p{N}_]+/gu
-
-  const parts: React.ReactNode[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  let didHighlight = false
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.substring(lastIndex, match.index))
-    }
-
-    const token = match[0]
-    const tokenLower = token.toLocaleLowerCase()
-    const shouldHighlight = queryWords.some((word) => tokenLower.includes(word))
-
-    if (shouldHighlight) {
-      parts.push(
-        <span key={match.index} className="text-yellow-500 font-bold">
-          {token}
-        </span>
-      )
-      didHighlight = true
-    } else {
-      parts.push(token)
-    }
-
-    lastIndex = match.index + token.length
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex))
-  }
-
-  return didHighlight ? parts : text
 }
 
 export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick, onCorrection }: PunchlineCardProps) {
@@ -86,35 +37,39 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
     ? result.context[coreLineIndex + 1]
     : null
   const hasMoreContext = result.context.length > 3
+  const scoreLabel = result.type === 'random'
+    ? 'Zufällig'
+    : `${result.type === 'exact' ? 'Stichwort' : 'Semantisch'}-Konfidenz`
 
   return (
-    <Card className="card-hover-effect overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm relative shadow-md">
-      <CardHeader className="p-4 pb-2">
+    <Card className="card-hover-effect relative overflow-hidden border-border/50 bg-card/55 shadow-xl shadow-black/20 backdrop-blur-md">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+      <CardHeader className="p-5 pb-3">
         {onCorrection && (
           <button
             onClick={() => onCorrection(result)}
             className="absolute top-3 right-3 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-10"
-            title="Submit correction"
+            title="Korrektur einreichen"
+            aria-label="Fehler melden"
           >
             <span className="text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              Spotted an error?
+              Fehler gefunden?
             </span>
             <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
           </button>
         )}
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-2.5">
-            <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary">
+        <div className="mb-3 flex flex-wrap items-center gap-2.5 pr-10">
+          <Badge variant="outline" className="rounded-full border-primary/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.2em] text-primary">
               {result.battle.league === 'DLTLLY' ? (
                 <img
-                  src="/league-dltlly.svg"
+                  src="/league-dltlly.png"
                   alt="DLTLLY"
-                  className="w-3 h-3 mr-1 object-contain"
+                  className="mr-1 h-3 w-3 object-contain"
                 />
               ) : (
-                <Swords className="w-3 h-3 mr-1" />
+                <Swords className="mr-1 h-3 w-3" />
               )}
               {result.battle.league}
             </Badge>
@@ -122,68 +77,68 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
               <Badge
                 variant={result.type === 'exact' ? 'default' : 'outline'}
                 className={cn(
-                  "text-[10px] font-code",
+                  "rounded-full px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em]",
                   result.type === 'exact'
                     ? "bg-accent text-accent-foreground"
                     : result.type === 'random'
-                    ? "border-emerald-500/50 text-emerald-400"
-                    : "border-purple-500/50 text-purple-400"
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                    : "border-primary/30 bg-primary/10 text-primary"
                 )}
               >
-                {result.type === 'exact'
-                  ? '🔍 Keyword'
-                  : result.type === 'random'
-                  ? '🎲 Random'
-                  : '🧠 Semantic'}
+                {result.type === 'exact' ? 'Stichwort' : result.type === 'random' ? 'Zufällig' : 'Semantisch'}
               </Badge>
             )}
-            {result.score && (
-              <Badge variant="secondary" className="text-[10px] bg-secondary/50">
-                Confidence: {(result.score * 100).toFixed(0)}%
-              </Badge>
-            )}
-          </div>
+          {typeof result.score === 'number' && (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em] text-muted-foreground">
+              <Waves className="h-3 w-3 text-primary" />
+              <span>{scoreLabel}</span>
+              <span className="text-foreground">{(result.score * 100).toFixed(0)}%</span>
+            </div>
+          )}
         </div>
-        <h3 className="text-sm font-semibold text-muted-foreground truncate">{result.battle.title}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+          {result.battle.title}
+        </h3>
       </CardHeader>
 
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="bg-primary text-primary-foreground p-1 rounded-full">
-            <Mic2 className="w-3 h-3" />
+      <CardContent className="p-5 pt-0">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="rounded-full bg-primary/15 p-1.5 text-primary">
+            <Mic2 className="h-3.5 w-3.5" />
           </div>
           <button
             onClick={() => onRapperClick?.(result.rapper.name)}
-            className="text-sm font-bold text-primary uppercase tracking-wide hover:text-primary/80 hover:bg-primary/10 transition-all duration-300 cursor-pointer px-2 py-0.5 rounded"
+            className="rounded px-2 py-0.5 text-sm font-bold uppercase tracking-[0.16em] text-primary transition-all duration-300 hover:bg-primary/10 hover:text-primary/80"
           >
             {result.rapper.name}
           </button>
           <Link
             href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
             className="text-muted-foreground/50 hover:text-primary transition-colors"
-            title={`View ${result.rapper.name}'s profile`}
+            title={`Profil von ${result.rapper.name}`}
           >
             <ExternalLink className="w-3 h-3" />
           </Link>
         </div>
-        <div className="relative pl-4 border-l-2 border-primary mb-4">
+        <div className="relative mb-5 overflow-hidden rounded-2xl border border-border/40 bg-black/20 p-4">
+          <div className="pointer-events-none absolute left-3 top-3 text-5xl leading-none text-primary/20">"</div>
           {hasContext && lineAbove && !showFullContext && (
-            <p className="text-sm font-mono leading-tight text-muted-foreground/60 mb-1">
+            <p className="mb-2 pl-5 text-sm font-mono leading-tight text-muted-foreground/55">
               {shouldHighlight ? highlightKeywords(lineAbove, searchQuery) : lineAbove}
             </p>
           )}
-          <p className="text-lg font-bold font-mono leading-tight text-foreground text-glow">
+          <p className="pl-5 text-xl font-bold font-mono leading-tight text-foreground sm:text-2xl">
             "{displayLine}"
           </p>
           {hasContext && lineBelow && !showFullContext && (
-            <p className="text-sm font-mono leading-tight text-muted-foreground/60 mt-1">
+            <p className="mt-2 pl-5 text-sm font-mono leading-tight text-muted-foreground/55">
               {shouldHighlight ? highlightKeywords(lineBelow, searchQuery) : lineBelow}
             </p>
           )}
         </div>
 
         {showFullContext && (
-          <div className="space-y-2 mb-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="mb-4 space-y-2 rounded-2xl border border-border/30 bg-background/35 p-4 animate-in slide-in-from-top-2 duration-300">
             {result.context.map((line, idx) => {
               const isCoreLine = line === result.line
               const contextDisplay = shouldHighlight ? highlightKeywords(line, searchQuery) : line
@@ -205,18 +160,18 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
         )}
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2">
+      <CardFooter className="mt-2 flex justify-between gap-3 border-t border-border/20 p-5 pt-4">
         {hasMoreContext ? (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowFullContext(!showFullContext)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-all duration-300"
+            className="text-xs text-muted-foreground transition-all duration-300 hover:text-foreground"
           >
             {showFullContext ? (
-              <>Hide Context <ChevronUp className="ml-1 w-3 h-3" /></>
+              <>Kontext ausblenden <ChevronUp className="ml-1 w-3 h-3" /></>
             ) : (
-              <>Full Context <ChevronDown className="ml-1 w-3 h-3" /></>
+              <>Ganzer Kontext <ChevronDown className="ml-1 w-3 h-3" /></>
             )}
           </Button>
         ) : (
@@ -229,7 +184,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onRapperClick,
           onClick={() => onPlayVideo(result)}
         >
           <Play className="mr-1.5 w-3.5 h-3.5 fill-current" />
-          Play Video
+          Video abspielen
         </Button>
       </CardFooter>
     </Card>

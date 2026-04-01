@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { battlesService, type BattleDetail, type TranscriptLine } from '@/lib/api/battles'
 import { extractYouTubeId } from '@/lib/api/utils'
@@ -63,7 +64,7 @@ export default function BattleDetailPage() {
       setBattle(data)
     } catch (error) {
       console.error('Failed to load battle:', error)
-      toast.error('Failed to load battle details')
+      toast.error('Battle-Details konnten nicht geladen werden')
     } finally {
       setIsLoading(false)
     }
@@ -76,7 +77,7 @@ export default function BattleDetailPage() {
       setTranscripts(data)
     } catch (error) {
       console.error('Failed to load transcripts:', error)
-      toast.error('Failed to load transcript')
+      toast.error('Transkript konnte nicht geladen werden')
     } finally {
       setIsTranscriptLoading(false)
     }
@@ -127,7 +128,7 @@ export default function BattleDetailPage() {
           className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Battles
+          Zurück zu Battles
         </Link>
 
         {isLoading ? (
@@ -148,7 +149,7 @@ export default function BattleDetailPage() {
                 )}
                 <Badge variant="outline" className="text-[10px] font-code border-green-500/30 text-green-500">
                   <ScrollText className="w-3 h-3 mr-1" />
-                  {battle.totalLines} lines
+                  {battle.totalLines} Zeilen
                 </Badge>
               </div>
               <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tight">
@@ -164,10 +165,12 @@ export default function BattleDetailPage() {
                 rel="noopener noreferrer"
                 className="block relative aspect-video rounded-2xl overflow-hidden border border-border/40 group"
               >
-                <img
+                <Image
                   src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
                   alt={battle.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 896px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-all duration-300 flex items-center justify-center">
                   <div className="bg-primary/90 rounded-full p-4 group-hover:scale-110 transition-transform duration-300">
@@ -177,7 +180,7 @@ export default function BattleDetailPage() {
                 <div className="absolute bottom-4 right-4">
                   <Badge className="bg-black/70 text-white border-0 gap-1">
                     <ExternalLink className="w-3 h-3" />
-                    Watch on YouTube
+                    Auf YouTube ansehen
                   </Badge>
                 </div>
               </a>
@@ -188,7 +191,7 @@ export default function BattleDetailPage() {
               <div className="space-y-3">
                 <h2 className="text-lg font-bold font-headline flex items-center gap-2">
                   <span className="text-primary">#</span>
-                  Rappers
+                  Rapper
                 </h2>
                 <div className="flex gap-3 flex-wrap">
                   {battle.rappers.map((rapper, i) => (
@@ -211,39 +214,48 @@ export default function BattleDetailPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-bold font-headline flex items-center gap-2">
                 <span className="text-primary">#</span>
-                Transcript
+                Transkript
                 {!isTranscriptLoading && (
                   <span className="text-sm font-normal text-muted-foreground">
-                    ({transcripts.length} lines)
+                    ({transcripts.length} Zeilen)
                   </span>
                 )}
               </h2>
 
               {isTranscriptLoading ? (
                 <TranscriptSkeleton />
-              ) : transcripts.length > 0 ? (
-                <div className="space-y-0.5">
-                  {transcripts.map((line) => {
-                    const colorIdx = line.speakerLabel
-                      ? speakerColorMap.get(line.speakerLabel) ?? 0
+              ) : segments.length > 0 ? (
+                <div className="space-y-3">
+                  {segments.map((segment, segIdx) => {
+                    const colorIdx = segment.speaker
+                      ? speakerColorMap.get(segment.speaker) ?? 0
                       : 0
 
                     return (
                       <div
-                        key={line.id}
-                        className={`flex gap-3 py-2 px-3 rounded-sm border-l-2 ${SPEAKER_BG_COLORS[colorIdx]}`}
+                        key={segIdx}
+                        className={`rounded-lg border-l-2 overflow-hidden ${SPEAKER_BG_COLORS[colorIdx]}`}
                       >
-                        <span className="text-xs text-muted-foreground/50 font-code w-8 text-right flex-shrink-0 pt-0.5">
-                          {line.sequenceIndex}
-                        </span>
-                        {line.speakerLabel && (
-                          <span className={`text-xs font-semibold w-24 flex-shrink-0 pt-0.5 truncate ${SPEAKER_COLORS[colorIdx]}`}>
-                            {line.speakerLabel}
-                          </span>
+                        {segment.speaker && (
+                          <div className={`px-4 pt-3 pb-1 flex items-center gap-2`}>
+                            <Mic2 className={`w-3.5 h-3.5 ${SPEAKER_COLORS[colorIdx]}`} />
+                            <span className={`text-xs font-bold uppercase tracking-wide ${SPEAKER_COLORS[colorIdx]}`}>
+                              {segment.speaker}
+                            </span>
+                          </div>
                         )}
-                        <span className="text-sm leading-relaxed flex-1">
-                          {line.content}
-                        </span>
+                        <div className="px-4 pb-3 space-y-0.5">
+                          {segment.lines.map((line) => (
+                            <div key={line.id} className="flex gap-3 py-1">
+                              <span className="text-xs text-muted-foreground/40 font-code w-8 text-right flex-shrink-0 pt-0.5">
+                                {line.sequenceIndex}
+                              </span>
+                              <span className="text-sm leading-relaxed flex-1">
+                                {line.content}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )
                   })}
@@ -251,7 +263,7 @@ export default function BattleDetailPage() {
               ) : (
                 <div className="text-center py-16 bg-card/20 rounded-2xl border border-dashed border-border/40">
                   <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">No transcript available for this battle.</p>
+                  <p className="text-muted-foreground">Kein Transkript für dieses Battle verfügbar.</p>
                 </div>
               )}
             </div>
@@ -259,14 +271,14 @@ export default function BattleDetailPage() {
         ) : (
           <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40">
             <Swords className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-muted-foreground">Battle not found</h3>
+            <h3 className="text-2xl font-bold text-muted-foreground">Battle nicht gefunden</h3>
             <p className="text-muted-foreground mt-2">
-              Could not find this battle.
+              Dieses Battle konnte nicht gefunden werden.
             </p>
             <Link href="/battles" className="mt-6 inline-block">
               <Button variant="outline" className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                Back to Battles
+                Zurück zu Battles
               </Button>
             </Link>
           </div>

@@ -49,14 +49,14 @@ export function RapperFilterDropdown({
         >
           {selectedRapper && rappers.find(r => r.name === selectedRapper)
             ? selectedRapper
-            : "More rappers..."}
+            : "Weitere Rapper..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <div className="p-2">
           <Input
-            placeholder="Search rappers..."
+            placeholder="Rapper suchen..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-sm"
@@ -65,7 +65,7 @@ export function RapperFilterDropdown({
         <div className="max-h-[300px] overflow-y-auto">
           {sortedRappers.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              No rappers found
+              Keine Rapper gefunden
             </div>
           ) : (
             sortedRappers.map((rapper) => (

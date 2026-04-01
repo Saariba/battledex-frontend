@@ -13,22 +13,26 @@ interface SearchControlsProps {
   value?: string
   onValueChange?: (value: string) => void
   inputRef?: React.RefObject<HTMLInputElement | null>
+  compact?: boolean
 }
 
-function highlightMatch(text: string, query: string) {
-  if (!query.trim()) return text
-  const idx = text.toLowerCase().indexOf(query.toLowerCase())
-  if (idx === -1) return text
+function highlightMatch(text: unknown, query: unknown) {
+  const safeText = typeof text === "string" ? text : String(text ?? "")
+  const safeQuery = typeof query === "string" ? query : String(query ?? "")
+
+  if (!safeQuery.trim()) return safeText
+  const idx = safeText.toLowerCase().indexOf(safeQuery.toLowerCase())
+  if (idx === -1) return safeText
   return (
     <>
-      {text.slice(0, idx)}
-      <span className="text-primary font-bold">{text.slice(idx, idx + query.length)}</span>
-      {text.slice(idx + query.length)}
+      {safeText.slice(0, idx)}
+      <span className="text-primary font-bold">{safeText.slice(idx, idx + safeQuery.length)}</span>
+      {safeText.slice(idx + safeQuery.length)}
     </>
   )
 }
 
-export function SearchControls({ onSearch, isLoading, value, onValueChange, inputRef }: SearchControlsProps) {
+export function SearchControls({ onSearch, isLoading, value, onValueChange, inputRef, compact = false }: SearchControlsProps) {
   const [internalQuery, setInternalQuery] = useState("")
   const [isFocused, setIsFocused] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -112,8 +116,10 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         </div>
         <Input
           ref={inputRef}
-          placeholder="Search for punchlines (e.g. 'bars about boxing' or 'chess metaphors')"
-          className="pl-12 h-14 bg-card/60 border-border/50 text-lg rounded-2xl focus:ring-primary focus:border-primary transition-all duration-300 shadow-lg"
+          placeholder="Punchlines suchen (z.B. 'Boxen', 'Schach-Metaphern' oder 'Vater-Angle')"
+          className={`pl-12 pr-32 bg-card/70 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all duration-300 shadow-lg ${
+            compact ? 'h-12 text-base' : 'h-14 text-lg'
+          }`}
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -128,10 +134,10 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         <div className="absolute inset-y-2 right-2 flex items-center">
           <Button
             type="submit"
-            className="h-full px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold"
+            className={`h-full rounded-xl bg-primary hover:bg-primary/90 text-white font-bold ${compact ? 'px-4' : 'px-6'}`}
             disabled={isLoading || !query.trim()}
           >
-            {isLoading ? "Searching..." : "Find Bars"}
+            {isLoading ? "Suche läuft..." : compact ? "Suchen" : "Bars finden"}
           </Button>
         </div>
       </form>
@@ -146,7 +152,7 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         >
           {suggestions.map((suggestion, index) => (
             <button
-              key={suggestion}
+              key={`${suggestion}-${index}`}
               id={`autocomplete-item-${index}`}
               role="option"
               aria-selected={index === activeIndex}
@@ -170,9 +176,9 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         </div>
       )}
 
-      {!isFocused && !query && !isOpen && (
+      {!compact && !isFocused && !query && !isOpen && (
         <p className="text-xs text-muted-foreground mt-2 font-mono">
-          Press <kbd className="px-1.5 py-0.5 rounded border border-border/60 bg-muted/50 text-[10px] font-semibold">/</kbd> to search
+          Drücke <kbd className="px-1.5 py-0.5 rounded border border-border/60 bg-muted/50 text-[10px] font-semibold">/</kbd> zum Suchen
         </p>
       )}
     </div>

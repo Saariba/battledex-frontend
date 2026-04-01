@@ -13,62 +13,13 @@ import { KaraokeLyrics } from "./karaoke-lyrics"
 import { toast } from "@/hooks/use-toast"
 import type { TranscriptLine } from "@/lib/api/types"
 import { transcriptCache, generateCacheKey } from "@/lib/cache"
+import { highlightKeywords } from "@/lib/highlight"
 
 interface VideoModalProps {
   result: SearchResult | null
   searchQuery?: string
   onClose: () => void
   onCorrection?: (result: SearchResult) => void
-}
-
-/**
- * Highlight matching keywords in text for exact/keyword matches
- */
-function highlightKeywords(text: string, query: string): React.ReactNode {
-  if (!query || !text) return text
-
-  const queryWords = query
-    .toLocaleLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 0)
-
-  if (queryWords.length === 0) return text
-
-  const regex = /[\p{L}\p{N}_]+/gu
-
-  const parts: React.ReactNode[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  let didHighlight = false
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.substring(lastIndex, match.index))
-    }
-
-    const token = match[0]
-    const tokenLower = token.toLocaleLowerCase()
-    const shouldHighlight = queryWords.some((word) => tokenLower.includes(word))
-
-    if (shouldHighlight) {
-      parts.push(
-        <span key={match.index} className="text-yellow-500 font-bold">
-          {token}
-        </span>
-      )
-      didHighlight = true
-    } else {
-      parts.push(token)
-    }
-
-    lastIndex = match.index + token.length
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex))
-  }
-
-  return didHighlight ? parts : text
 }
 
 export function VideoModal({ result, searchQuery = '', onClose, onCorrection }: VideoModalProps) {
@@ -153,8 +104,8 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
         .catch((err) => {
           console.error('Failed to load transcript:', err)
           toast({
-            title: "Could not load lyrics",
-            description: "Lyrics are unavailable for this battle",
+            title: "Lyrics konnten nicht geladen werden",
+            description: "Lyrics sind für dieses Battle nicht verfügbar",
             variant: "destructive",
           })
         })
@@ -173,10 +124,11 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
             <button
               onClick={() => onCorrection(result)}
               className="absolute top-3 sm:top-4 right-3 sm:right-4 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-50"
-              title="Submit correction"
+              title="Korrektur einreichen"
+              aria-label="Fehler melden"
             >
               <span className="hidden sm:inline text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                Spotted an error?
+                Fehler gefunden?
               </span>
               <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">!</span>
@@ -187,7 +139,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
             <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary flex-shrink-0">
               {result.battle.league === 'DLTLLY' ? (
                 <img
-                  src="/league-dltlly.svg"
+                  src="/league-dltlly.png"
                   alt="DLTLLY"
                   className="w-3 h-3 mr-1 object-contain"
                 />
@@ -199,7 +151,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
             <span className="truncate">{result.battle.title}</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Watch the battle video with live synced lyrics
+            Battle-Video mit synchronisierten Lyrics ansehen
           </DialogDescription>
         </DialogHeader>
         <div className="aspect-video w-full bg-black">
@@ -218,16 +170,16 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
                 className="gap-1.5 h-8 text-xs transition-all duration-300"
               >
                 <RotateCcw className="w-3 h-3" />
-                Rewind to Line
+                Zur Zeile spulen
               </Button>
               <span className="text-xs text-muted-foreground">
                 {Math.floor(result.timestamp / 60)}:{(result.timestamp % 60).toString().padStart(2, '0')}
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted-foreground/60">
-              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Space</kbd> play/pause</span>
-              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">←→</kbd> seek 5s</span>
-              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Esc</kbd> close</span>
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Space</kbd> Play/Pause</span>
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">←→</kbd> 5s spulen</span>
+              <span><kbd className="px-1 py-0.5 rounded border border-border/40 bg-muted/30 font-mono">Esc</kbd> Schließen</span>
             </div>
           </div>
         </div>
@@ -242,7 +194,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
           {transcript.length > 0 ? (
             <div className="border-t border-border/30 pt-4 sm:pt-6">
               <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Live Lyrics
+                Live-Lyrics
               </h4>
               <KaraokeLyrics
                 transcript={transcript}
@@ -253,13 +205,13 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
           ) : isLoadingTranscript ? (
             <div className="text-center py-6 sm:py-8 border-t border-border/30 pt-4 sm:pt-6">
               <div className="animate-pulse text-sm text-muted-foreground">
-                Loading lyrics...
+                Lyrics werden geladen...
               </div>
             </div>
           ) : !transcriptBattleId ? (
             <div className="text-center py-6 sm:py-8 border-t border-border/30 pt-4 sm:pt-6">
               <div className="text-sm text-muted-foreground">
-                Lyrics are unavailable for this result.
+                Lyrics sind für dieses Ergebnis nicht verfügbar.
               </div>
             </div>
           ) : null}

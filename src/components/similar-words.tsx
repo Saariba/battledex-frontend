@@ -12,16 +12,21 @@ export function SimilarWords({ words, onWordClick, isLoading }: SimilarWordsProp
   if (isLoading || words.length === 0) return null
 
   return (
-    <div className="flex flex-wrap gap-1.5 mt-3">
+    <div className="mt-4 rounded-2xl border border-border/40 bg-card/35 p-3 backdrop-blur-sm">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+        Verwandte Begriffe
+      </p>
+      <div className="flex flex-wrap gap-1.5">
       {words.map(({ word, count }) => (
         <button
           key={word}
           onClick={() => onWordClick(word)}
-          className="px-2 py-1 rounded text-xs font-medium transition-all duration-300 bg-card/50 text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 border border-border/30"
+          className="rounded-full border border-border/30 bg-background/40 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-300 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground"
         >
           {word} <span className="opacity-50">({count})</span>
         </button>
       ))}
+      </div>
     </div>
   )
 }

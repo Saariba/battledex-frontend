@@ -1,88 +1,56 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { statsService } from '@/lib/api/stats'
-import type { StatsResponse, NounStat } from '@/lib/api/stats'
+import type { StatsResponse } from '@/lib/api/stats'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart3, Users, Swords, FileText, Database, MessageSquare } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart3, Users, Swords, FileText, Database } from 'lucide-react'
 import { toast } from 'sonner'
-
-const COMMON_WORDS = new Set([
-  'man', 'time', 'way', 'thing', 'people', 'day', 'part', 'lot', 'type',
-  'place', 'point', 'year', 'hand', 'end', 'side', 'world', 'kind',
-  'case', 'number', 'fact', 'something', 'nothing', 'anything', 'everything',
-])
 
 export default function StatsPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null)
-  const [nounStats, setNounStats] = useState<NounStat[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [nounsLoading, setNounsLoading] = useState(true)
-  const [filterCommon, setFilterCommon] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!isMounted) return
+    if (hasFetched.current) return
+    hasFetched.current = true
 
     statsService.getStats().then(setStats).catch(() => {
-      toast.error('Failed to load database statistics')
+      toast.error('Statistiken konnten nicht geladen werden')
     }).finally(() => setIsLoading(false))
-
-    statsService.getNounStats(30).then(res => {
-      setNounStats(res.nouns)
-    }).catch(() => {
-      // Silently fail
-    }).finally(() => setNounsLoading(false))
-  }, [isMounted])
-
-  if (!isMounted) return null
-
-  const filteredNouns = filterCommon
-    ? nounStats.filter(n => !COMMON_WORDS.has(n.noun.toLowerCase())).slice(0, 20)
-    : nounStats.slice(0, 20)
-
-  const BAR_COLORS = [
-    'hsl(var(--primary))',
-    'hsl(262, 83%, 58%)',
-    'hsl(142, 71%, 45%)',
-    'hsl(217, 91%, 60%)',
-  ]
+  }, [])
 
   const statCards = stats ? [
     {
-      title: 'Total Battles',
+      title: 'Battles',
       value: stats.total_battles.toLocaleString(),
       icon: Swords,
-      description: 'Rap battles indexed',
+      description: 'Indexierte Battles',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
-      title: 'Total Rappers',
+      title: 'Rapper',
       value: stats.total_rappers.toLocaleString(),
       icon: Users,
-      description: 'Unique battle rappers',
+      description: 'Einzelne Rapper',
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
     },
     {
-      title: 'Total Lines',
+      title: 'Zeilen',
       value: stats.total_lines.toLocaleString(),
       icon: FileText,
-      description: 'Transcript lines',
+      description: 'Transkript-Zeilen',
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
     },
     {
-      title: 'Total Chunks',
+      title: 'Chunks',
       value: stats.total_chunks.toLocaleString(),
       icon: Database,
-      description: 'Searchable chunks',
+      description: 'Durchsuchbare Abschnitte',
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
     },
@@ -97,10 +65,10 @@ export default function StatsPage() {
             <BarChart3 className="w-12 h-12 text-primary" />
           </div>
           <h1 className="text-5xl md:text-6xl font-black font-headline tracking-tight">
-            DATABASE <span className="text-primary">STATISTICS</span>
+            DATENBANK-<span className="text-primary">STATISTIK</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Overview of the BattleDex neural database
+            Übersicht über die BattleDex-Datenbank
           </p>
         </section>
 
@@ -144,95 +112,24 @@ export default function StatsPage() {
           )}
         </section>
 
-        {/* Noun Stats Chart */}
-        <section className="bg-card/30 rounded-2xl border border-border/40 p-6 md:p-8 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-primary" />
-              Most Used Words in Battles
-            </h2>
-            <button
-              onClick={() => setFilterCommon(!filterCommon)}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                filterCommon
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card/50 text-muted-foreground border border-border/40 hover:text-foreground'
-              }`}
-            >
-              {filterCommon ? 'Showing filtered' : 'Hide common words'}
-            </button>
-          </div>
-
-          {nounsLoading ? (
-            <div className="h-[400px] bg-card/20 rounded-xl animate-pulse" />
-          ) : filteredNouns.length > 0 ? (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={filteredNouns}
-                  layout="vertical"
-                  margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
-                >
-                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis
-                    dataKey="noun"
-                    type="category"
-                    width={100}
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                    }}
-                    formatter={(value: number, _name: string, props: { payload?: NounStat }) => {
-                      const noun = props.payload
-                      if (!noun) return [value, 'Count']
-                      return [
-                        `${value.toLocaleString()} uses (${noun.battles_count} battles, ${noun.rappers_count} rappers)`,
-                        'Occurrences'
-                      ]
-                    }}
-                  />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                    {filteredNouns.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={BAR_COLORS[index % BAR_COLORS.length]}
-                        fillOpacity={0.8}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-12">No noun statistics available.</p>
-          )}
-        </section>
-
         {/* About */}
         {stats && !isLoading && (
           <section className="bg-card/30 rounded-2xl border border-border/40 p-8 backdrop-blur-sm">
             <h2 className="text-2xl font-bold font-headline mb-4 flex items-center gap-2">
               <Database className="w-6 h-6 text-primary" />
-              About the Database
+              Über die Datenbank
             </h2>
             <div className="space-y-3 text-muted-foreground">
               <p>
-                BattleDex indexes <span className="font-semibold text-foreground">{stats.total_battles.toLocaleString()} battles</span> featuring{' '}
-                <span className="font-semibold text-foreground">{stats.total_rappers.toLocaleString()} rappers</span>.
+                BattleDex indexiert <span className="font-semibold text-foreground">{stats.total_battles.toLocaleString()} Battles</span> mit{' '}
+                <span className="font-semibold text-foreground">{stats.total_rappers.toLocaleString()} Rappern</span>.
               </p>
               <p>
-                The database contains <span className="font-semibold text-foreground">{stats.total_lines.toLocaleString()} transcript lines</span> broken down into{' '}
-                <span className="font-semibold text-foreground">{stats.total_chunks.toLocaleString()} searchable chunks</span> for semantic search.
+                Die Datenbank enthält <span className="font-semibold text-foreground">{stats.total_lines.toLocaleString()} Transkript-Zeilen</span>, aufgeteilt in{' '}
+                <span className="font-semibold text-foreground">{stats.total_chunks.toLocaleString()} durchsuchbare Abschnitte</span>.
               </p>
               <p className="text-sm pt-2 border-t border-border/30 mt-4">
-                Neural embeddings enable searching by meaning, context, and style - not just keywords.
+                Die Suche funktioniert nach Bedeutung, Kontext und Stil — nicht nur nach Stichwörtern.
               </p>
             </div>
           </section>

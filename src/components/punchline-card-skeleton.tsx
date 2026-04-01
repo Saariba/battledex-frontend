@@ -5,27 +5,29 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function PunchlineCardSkeleton() {
   return (
-    <Card className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-sm shadow-md">
-      <CardHeader className="p-4 pb-2">
-        <div className="flex items-center gap-2.5 mb-2">
-          <Skeleton className="h-5 w-16 rounded-full" />
-          <Skeleton className="h-5 w-20 rounded-full" />
+    <Card className="overflow-hidden border-border/50 bg-card/55 shadow-xl shadow-black/20 backdrop-blur-md">
+      <CardHeader className="p-5 pb-3">
+        <div className="mb-3 flex items-center gap-2.5">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-6 w-28 rounded-full" />
         </div>
-        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-2/3" />
       </CardHeader>
 
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center gap-2 mb-2">
-          <Skeleton className="h-6 w-6 rounded-full" />
+      <CardContent className="p-5 pt-0">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-7 w-7 rounded-full" />
           <Skeleton className="h-4 w-28" />
         </div>
-        <div className="pl-4 border-l-2 border-muted mb-4 space-y-2">
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-4/5" />
+        <div className="mb-4 rounded-2xl border border-border/30 p-4 space-y-3">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-7 w-full" />
+          <Skeleton className="h-7 w-4/5" />
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex justify-between gap-3 border-t border-border/20 mt-2">
+      <CardFooter className="mt-2 flex justify-between gap-3 border-t border-border/20 p-5 pt-4">
         <Skeleton className="h-8 w-28" />
         <Skeleton className="h-8 w-20" />
         <Skeleton className="h-8 w-24" />
