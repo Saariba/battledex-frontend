@@ -118,7 +118,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
 
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-full sm:w-[95vw] bg-background border-primary/20 p-0 rounded-none sm:rounded-lg inset-0 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] translate-x-0 translate-y-0 max-h-[100dvh] sm:max-h-[90vh]">
+      <DialogContent className="video-modal-content max-w-4xl bg-background border-primary/20 p-0 !flex !flex-col gap-0 overflow-y-auto overflow-x-hidden sm:rounded-lg">
         <DialogHeader className="p-4 sm:p-6 bg-card/50 relative">
           {onCorrection && (
             <button
@@ -135,7 +135,7 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
               </div>
             </button>
           )}
-          <DialogTitle className="text-primary font-headline flex items-center gap-2 pr-8 sm:pr-0 text-sm sm:text-base">
+          <DialogTitle className="text-primary font-headline flex items-center gap-2 pr-10 text-sm sm:text-base min-w-0 overflow-hidden">
             <Badge variant="outline" className="text-[10px] font-code border-primary/30 text-primary flex-shrink-0">
               {result.battle.league === 'DLTLLY' ? (
                 <img
@@ -148,13 +148,13 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
               )}
               {result.battle.league}
             </Badge>
-            <span className="truncate">{result.battle.title}</span>
+            <span className="truncate min-w-0">{result.battle.title}</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
             Battle-Video mit synchronisierten Lyrics ansehen
           </DialogDescription>
         </DialogHeader>
-        <div className="aspect-video w-full bg-black">
+        <div className="aspect-video w-full max-w-full bg-black overflow-hidden">
           <div id={playerId} className="w-full h-full" />
         </div>
 
@@ -184,9 +184,9 @@ function VideoModalContent({ result, searchQuery = '', onClose, onCorrection }: 
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div>
-            <p className="text-base sm:text-lg font-bold text-foreground mb-2 italic break-words">"{displayLine}"</p>
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
+          <div className="min-w-0">
+            <p className="text-base sm:text-lg font-bold text-foreground mb-2 italic break-words [overflow-wrap:anywhere]">"{displayLine}"</p>
             <p className="text-xs sm:text-sm text-muted-foreground">— {result.rapper.name} in {result.battle.league}</p>
           </div>
 
