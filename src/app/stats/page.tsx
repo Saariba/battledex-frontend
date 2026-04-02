@@ -6,6 +6,7 @@ import { statsService } from '@/lib/api/stats'
 import type { StatsResponse } from '@/lib/api/stats'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { Swords, Users, FileText, Database } from 'lucide-react'
 
 export default function StatsPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null)
@@ -48,32 +49,23 @@ export default function StatsPage() {
           </div>
         ) : stats ? (
           <>
-            {/* Stats as a simple, confident grid — no cards, no icons */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
-              <div>
-                <div className="text-3xl sm:text-4xl font-black tabular-nums text-foreground">
-                  {stats.total_battles.toLocaleString('de-DE')}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+              {[
+                { icon: Swords, value: stats.total_battles, label: 'Battles' },
+                { icon: Users, value: stats.total_rappers, label: 'Rapper' },
+                { icon: FileText, value: stats.total_lines, label: 'Transkript-Zeilen' },
+                { icon: Database, value: stats.total_chunks, label: 'Suchbare Abschnitte' },
+              ].map(({ icon: Icon, value, label }) => (
+                <div key={label} className="rounded-xl border border-border/30 bg-card/40 p-4 space-y-3">
+                  <Icon className="h-5 w-5 text-muted-foreground/60" />
+                  <div>
+                    <div className="text-2xl sm:text-3xl font-black tabular-nums text-foreground">
+                      {value.toLocaleString('de-DE')}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">{label}</div>
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">Battles</div>
-              </div>
-              <div>
-                <div className="text-3xl sm:text-4xl font-black tabular-nums text-foreground">
-                  {stats.total_rappers.toLocaleString('de-DE')}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Rapper</div>
-              </div>
-              <div>
-                <div className="text-3xl sm:text-4xl font-black tabular-nums text-foreground">
-                  {stats.total_lines.toLocaleString('de-DE')}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Transkript-Zeilen</div>
-              </div>
-              <div>
-                <div className="text-3xl sm:text-4xl font-black tabular-nums text-foreground">
-                  {stats.total_chunks.toLocaleString('de-DE')}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Suchbare Abschnitte</div>
-              </div>
+              ))}
             </div>
 
             <hr className="border-border/30" />
