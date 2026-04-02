@@ -44,15 +44,15 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
         {onCorrection && (
           <button
             onClick={() => onCorrection(result)}
-            className="absolute top-3 right-3 group flex items-center gap-2 transition-all duration-300 hover:pr-3 z-10"
+            className="absolute top-3 right-3 group flex items-center gap-1.5 transition-all duration-300 z-10 opacity-30 hover:opacity-100"
             title="Korrektur einreichen"
             aria-label="Fehler melden"
           >
-            <span className="text-xs font-semibold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              Fehler gefunden?
+            <span className="hidden sm:inline text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              Fehler melden
             </span>
-            <div className="w-5 h-5 rounded-full bg-red-500 group-hover:bg-red-600 transition-colors flex-shrink-0 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">!</span>
+            <div className="w-4 h-4 rounded-full border border-muted-foreground/40 group-hover:border-muted-foreground transition-colors flex-shrink-0 flex items-center justify-center">
+              <span className="text-muted-foreground text-[9px] font-medium">!</span>
             </div>
           </button>
         )}
