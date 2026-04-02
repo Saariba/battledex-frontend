@@ -1,7 +1,6 @@
 "use client"
 
 import React, { Suspense, useState, useEffect } from "react"
-import Link from "next/link"
 import dynamic from "next/dynamic"
 import { SearchControls } from "@/components/search-controls"
 import { SimilarWords } from "@/components/similar-words"
@@ -12,7 +11,7 @@ import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
 const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
 import { useHomepage } from "@/hooks/use-homepage"
-import { Search, Shuffle, TrendingUp, Sparkles, Users, X, Clock, Copy, Check, FlaskConical } from "lucide-react"
+import { Search, Shuffle, Sparkles, X, Clock, Copy, Check, FlaskConical, SlidersHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const SEMANTIC_BETA_DISMISSED_KEY = 'battledex_semantic_beta_dismissed'
@@ -52,9 +51,7 @@ function RapBattleAppInner() {
     featuredBars,
     featuredLoading,
     isShuffling,
-    popularQueries,
     recentSearches,
-    trendingRappers,
     filteredResults,
     displayedResults,
     hasMore,
@@ -71,6 +68,7 @@ function RapBattleAppInner() {
     loadFeaturedBars,
   } = useHomepage()
 
+  const [showRapperFilter, setShowRapperFilter] = useState(false)
   const [semanticBetaDismissed, setSemanticBetaDismissed] = useState(true) // default true to avoid flash
   useEffect(() => {
     try {
@@ -186,62 +184,39 @@ function RapBattleAppInner() {
                   </div>
                 </div>
 
-                {!currentQuery && !isLoading && (recentSearches.length > 0 || popularQueries.length > 0) && (
-                  <div className="mx-auto max-w-3xl space-y-3">
-                    {recentSearches.length > 0 && (
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          Zuletzt gesucht
-                        </span>
-                        {recentSearches.map((q) => (
-                          <span
-                            key={q}
-                            className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
-                          >
-                            <button
-                              onClick={() => {
-                                setSearchQuery(q)
-                                handleSearch(q, 'hybrid')
-                              }}
-                            >
-                              {q}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveRecentSearch(q)
-                              }}
-                              className="ml-0.5 text-muted-foreground/50 hover:text-foreground"
-                              aria-label={`Suche „${q}" entfernen`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {popularQueries.length > 0 && (
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          <TrendingUp className="h-3.5 w-3.5" />
-                          Beliebt
-                        </span>
-                        {popularQueries.map(({ query }) => (
+                {!currentQuery && !isLoading && recentSearches.length > 0 && (
+                  <div className="mx-auto max-w-3xl">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        Zuletzt gesucht
+                      </span>
+                      {recentSearches.map((q) => (
+                        <span
+                          key={q}
+                          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
+                        >
                           <button
-                            key={query}
                             onClick={() => {
-                              setSearchQuery(query)
-                              handleSearch(query, 'hybrid')
+                              setSearchQuery(q)
+                              handleSearch(q, 'hybrid')
                             }}
-                            className="rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
                           >
-                            {query}
+                            {q}
                           </button>
-                        ))}
-                      </div>
-                    )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveRecentSearch(q)
+                            }}
+                            className="ml-0.5 text-muted-foreground/50 hover:text-foreground"
+                            aria-label={`Suche „${q}" entfernen`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -249,73 +224,44 @@ function RapBattleAppInner() {
           )}
 
           {!hasActiveSearch && (
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-2xl font-bold font-headline">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    Zufällige Bars
-                  </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadFeaturedBars}
-                    disabled={isShuffling}
-                    className="gap-2 rounded-full border-border/50 bg-background/40"
-                  >
-                    <Shuffle className={`h-4 w-4 ${isShuffling ? 'animate-spin' : ''}`} />
-                    Neue Bars
-                  </Button>
-                </div>
-
-                {featuredLoading ? (
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    {[1, 2, 3, 4].map(i => (
-                      <PunchlineCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    {featuredBars.map((result) => (
-                      <PunchlineCard
-                        key={result.id}
-                        result={result}
-                        searchQuery=""
-                        onPlayVideo={setSelectedVideo}
-
-                        onCorrection={(result) => setCorrectionResult(result)}
-                      />
-                    ))}
-                  </div>
-                )}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-2xl font-bold font-headline">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Zufällige Bars
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadFeaturedBars}
+                  disabled={isShuffling}
+                  className="gap-2 rounded-full border-border/50 bg-background/40"
+                >
+                  <Shuffle className={`h-4 w-4 ${isShuffling ? 'animate-spin' : ''}`} />
+                  Neue Bars
+                </Button>
               </div>
 
-              <div className="space-y-6">
-                <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
-                  <h3 className="mb-4 flex items-center gap-2 text-lg font-bold font-headline">
-                    <Users className="h-4 w-4 text-primary" />
-                    Beliebte Rapper
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {trendingRappers.map(({ name, battle_count }) => (
-                      <Link
-                        key={name}
-                        href={`/rappers/${encodeURIComponent(name)}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-border/30 bg-background/35 px-4 py-2 text-sm font-semibold text-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
-                      >
-                        {name}
-                        {battle_count > 0 && (
-                          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                            {battle_count} Battles
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
+              {featuredLoading ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <PunchlineCardSkeleton key={i} />
+                  ))}
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {featuredBars.map((result) => (
+                    <PunchlineCard
+                      key={result.id}
+                      result={result}
+                      searchQuery=""
+                      onPlayVideo={setSelectedVideo}
 
-
-              </div>
+                      onCorrection={(result) => setCorrectionResult(result)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -329,16 +275,6 @@ function RapBattleAppInner() {
                       Wechsle zwischen allen Treffern, exaktem Wortlaut und semantischen Ergebnissen.
                     </p>
                   </div>
-                  {selectedRapper && (
-                    <button
-                      onClick={() => handleRapperFilter(null)}
-                      className="inline-flex items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
-                      aria-label={`Filter für ${selectedRapper} entfernen`}
-                    >
-                      <span>{selectedRapper}</span>
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -390,32 +326,47 @@ function RapBattleAppInner() {
 
                   {rapperCounts.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
-                        Nach Rapper filtern
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {topRappers.map(({ name }) => (
-                          <button
-                            key={name}
-                            onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
-                            className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
-                              selectedRapper === name
-                                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                                : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
-                            }`}
-                          >
-                            {name}
-                          </button>
-                        ))}
-
-                        {remainingRappers.length > 0 && (
-                          <RapperFilterDropdown
-                            rappers={remainingRappers}
-                            selectedRapper={selectedRapper}
-                            onSelect={(name) => handleRapperFilter(selectedRapper === name ? null : name)}
-                          />
+                      <button
+                        onClick={() => setShowRapperFilter(!showRapperFilter)}
+                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                          showRapperFilter || selectedRapper
+                            ? 'border border-primary/30 bg-primary/10 text-primary'
+                            : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                        }`}
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        Rapper filtern
+                        {selectedRapper && (
+                          <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-bold">
+                            {selectedRapper}
+                          </span>
                         )}
-                      </div>
+                      </button>
+                      {showRapperFilter && (
+                        <div className="flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
+                          {topRappers.map(({ name }) => (
+                            <button
+                              key={name}
+                              onClick={() => handleRapperFilter(selectedRapper === name ? null : name)}
+                              className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                                selectedRapper === name
+                                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                                  : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                              }`}
+                            >
+                              {name}
+                            </button>
+                          ))}
+
+                          {remainingRappers.length > 0 && (
+                            <RapperFilterDropdown
+                              rappers={remainingRappers}
+                              selectedRapper={selectedRapper}
+                              onSelect={(name) => handleRapperFilter(selectedRapper === name ? null : name)}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

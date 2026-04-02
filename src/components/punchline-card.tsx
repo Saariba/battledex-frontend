@@ -36,9 +36,6 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
     ? result.context[coreLineIndex + 1]
     : null
   const hasMoreContext = result.context.length > 3
-  const scoreLabel = result.type === 'random'
-    ? 'Zufällig'
-    : `${result.type === 'exact' ? 'Stichwort' : 'Semantisch'}-Konfidenz`
 
   return (
     <Card className="card-hover-effect relative overflow-hidden border-border/50 bg-card/55 shadow-xl shadow-black/20 backdrop-blur-md">
@@ -87,16 +84,25 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
                 {result.type === 'exact' ? 'Stichwort' : result.type === 'random' ? 'Zufällig' : 'Semantisch'}
               </Badge>
             )}
-          {typeof result.score === 'number' && result.type !== 'random' && (
+          {typeof result.score === 'number' && result.type === 'semantic' && (
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em] text-muted-foreground">
               <Waves className="h-3 w-3 text-primary" />
-              <span>{scoreLabel}</span>
+              <span>Semantisch-Konfidenz</span>
               <span className="text-foreground">{(result.score * 100).toFixed(0)}%</span>
             </div>
           )}
         </div>
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-          {result.battle.title}
+          {result.battleUuid ? (
+            <Link
+              href={`/battles/${result.battleUuid}`}
+              className="hover:text-primary transition-colors"
+            >
+              {result.battle.title}
+            </Link>
+          ) : (
+            result.battle.title
+          )}
         </h3>
       </CardHeader>
 
