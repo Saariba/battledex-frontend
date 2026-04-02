@@ -12,6 +12,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { EmptyState } from '@/components/empty-state'
 import { toast } from 'sonner'
 
 export default function RappersPage() {
@@ -68,8 +69,8 @@ export default function RappersPage() {
   }
 
   return (
-    <main className="flex-1 overflow-y-auto p-6 md:p-10">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <main className="flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -115,7 +116,7 @@ export default function RappersPage() {
               <button
                 key={letter}
                 onClick={() => scrollToLetter(letter)}
-                className="w-8 h-8 rounded-lg text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center"
+                className="w-10 h-10 rounded-lg text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {letter}
               </button>
@@ -172,16 +173,12 @@ export default function RappersPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40">
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-xl font-bold text-muted-foreground">Keine Rapper gefunden</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Keine Ergebnisse für &bdquo;{searchInput}&ldquo;
-            </p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => setSearchInput('')}>
-              Suche zurücksetzen
-            </Button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Keine Rapper gefunden"
+            description={`Keine Ergebnisse für „${searchInput}"`}
+            action={{ label: 'Suche zurücksetzen', onClick: () => setSearchInput('') }}
+          />
         )}
       </div>
     </main>

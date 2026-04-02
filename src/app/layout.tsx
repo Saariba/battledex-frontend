@@ -33,9 +33,15 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased bg-background text-foreground overflow-x-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-semibold"
+        >
+          Zum Inhalt springen
+        </a>
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5 overflow-x-hidden">
           <AppHeader />
-          {children}
+          <div id="main-content">{children}</div>
           <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-6 sm:p-8 border-t border-border/20 text-muted-foreground text-[10px] font-mono uppercase tracking-[0.2em]">
             <span>BATTLEDEX</span>
             <span>&bull;</span>

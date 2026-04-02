@@ -30,7 +30,7 @@ function QuizSkeleton() {
           <Skeleton className="h-6 w-36 rounded-full" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-32 w-full rounded-[28px]" />
+          <Skeleton className="h-32 w-full rounded-3xl" />
         </CardContent>
       </Card>
       <Card className="border-border/40 bg-card/35 backdrop-blur-md">
@@ -456,7 +456,7 @@ export default function QuizPage() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] grid-fade opacity-50" />
 
       <div className="relative mx-auto flex max-w-6xl flex-col gap-6">
-        <section className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 px-5 py-5 shadow-2xl shadow-black/20 backdrop-blur-md sm:rounded-[36px] sm:px-6 sm:py-8 md:px-8">
+        <section className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 px-5 py-5 shadow-2xl shadow-black/20 backdrop-blur-md sm:rounded-3xl sm:px-6 sm:py-8 md:px-8">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="inline-flex items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">

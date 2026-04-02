@@ -4,8 +4,10 @@
 import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search } from "lucide-react"
+import { Search, FlaskConical } from "lucide-react"
 import { useAutocomplete } from "@/hooks/use-autocomplete"
+
+type SearchMode = 'keyword' | 'semantic'
 
 interface SearchControlsProps {
   onSearch: (query: string, mode: 'semantic' | 'keyword' | 'hybrid') => void
@@ -14,6 +16,11 @@ interface SearchControlsProps {
   onValueChange?: (value: string) => void
   inputRef?: React.RefObject<HTMLInputElement | null>
   compact?: boolean
+  /** Hide the mode toggle (e.g. when shown in the active search console) */
+  hideMode?: boolean
+  /** Controlled search mode */
+  searchMode?: SearchMode
+  onSearchModeChange?: (mode: SearchMode) => void
 }
 
 function highlightMatch(text: unknown, query: unknown) {
@@ -32,13 +39,16 @@ function highlightMatch(text: unknown, query: unknown) {
   )
 }
 
-export function SearchControls({ onSearch, isLoading, value, onValueChange, inputRef, compact = false }: SearchControlsProps) {
+export function SearchControls({ onSearch, isLoading, value, onValueChange, inputRef, compact = false, hideMode = false, searchMode: controlledMode, onSearchModeChange }: SearchControlsProps) {
   const [internalQuery, setInternalQuery] = useState("")
+  const [internalMode, setInternalMode] = useState<SearchMode>('keyword')
   const [isFocused, setIsFocused] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const query = value !== undefined ? value : internalQuery
   const setQuery = onValueChange || setInternalQuery
+  const mode = controlledMode ?? internalMode
+  const setMode = onSearchModeChange ?? setInternalMode
 
   const {
     suggestions,
@@ -55,13 +65,13 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
     e.preventDefault()
     close()
     if (!query.trim()) return
-    onSearch(query, 'keyword')
+    onSearch(query, mode)
   }
 
   const handleSelect = (suggestion: string) => {
     setQuery(suggestion)
     close()
-    onSearch(suggestion, 'keyword')
+    onSearch(suggestion, mode)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -141,6 +151,39 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
           </Button>
         </div>
       </form>
+
+      {/* Search mode toggle */}
+      {!hideMode && (
+        <div className="mt-2 flex items-center gap-1.5">
+          {([
+            { key: 'keyword' as const, label: 'Stichwort' },
+            { key: 'semantic' as const, label: 'Semantisch' },
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMode(key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                mode === key
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                  : 'border border-border/30 bg-background/35 text-muted-foreground hover:border-primary/40 hover:text-primary'
+              }`}
+            >
+              {key === 'semantic' && <FlaskConical className="w-3 h-3" />}
+              {label}
+              {key === 'semantic' && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none ${
+                  mode === 'semantic'
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-yellow-500/15 text-yellow-500'
+                }`}>
+                  Beta
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Autocomplete dropdown */}
       {isOpen && suggestions.length > 0 && (

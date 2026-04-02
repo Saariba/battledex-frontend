@@ -17,7 +17,7 @@ export default function ErrorPage({
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-      <div className="mx-auto max-w-lg rounded-[28px] border border-border/40 bg-card/35 p-10 text-center backdrop-blur-md">
+      <div className="mx-auto max-w-lg rounded-3xl border border-border/40 bg-card/35 p-10 text-center backdrop-blur-md">
         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-secondary/20">
           <AlertTriangle className="h-12 w-12 text-muted-foreground" />
         </div>

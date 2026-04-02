@@ -7,6 +7,7 @@ import { SimilarWords } from "@/components/similar-words"
 import { PunchlineCard } from "@/components/punchline-card"
 import { PunchlineCardSkeleton } from "@/components/punchline-card-skeleton"
 import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
+import { EmptyState } from "@/components/empty-state"
 
 const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
 const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
@@ -19,6 +20,14 @@ const SEMANTIC_BETA_DISMISSED_KEY = 'battledex_semantic_beta_dismissed'
 const LEAGUE_MARKS = [
   { name: "DLTLLY", logo: "/league-dltlly.png" },
   { name: "FOB", logo: "/league-fob.png" },
+]
+
+const EXAMPLE_SEARCHES = [
+  "Tiervergleiche",
+  "Mutter-Angle",
+  "Boxen",
+  "Wortspiel",
+  "Essen",
 ]
 
 export default function RapBattleApp() {
@@ -91,7 +100,7 @@ function RapBattleAppInner() {
 
         <div className="relative mx-auto flex max-w-6xl flex-col gap-8">
           {hasActiveSearch ? (
-            <section className="sticky top-14 sm:top-4 z-20 overflow-hidden rounded-2xl sm:rounded-[28px] border border-border/50 bg-background/75 p-3 shadow-2xl shadow-black/35 backdrop-blur-xl sm:p-4 md:p-5">
+            <section className="sticky top-14 sm:top-4 z-20 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/50 bg-background/75 p-3 shadow-2xl shadow-black/35 backdrop-blur-xl sm:p-4 md:p-5">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
               <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
@@ -130,6 +139,7 @@ function RapBattleAppInner() {
                 onValueChange={setSearchQuery}
                 inputRef={searchInputRef}
                 compact
+                hideMode
               />
 
               {!isLoading && currentQuery && (
@@ -141,7 +151,7 @@ function RapBattleAppInner() {
               )}
             </section>
           ) : (
-            <section className="relative overflow-hidden rounded-2xl sm:rounded-[36px] border border-border/50 bg-card/40 px-4 py-6 shadow-2xl shadow-black/25 backdrop-blur-md sm:px-6 sm:py-8 md:px-10 md:py-12">
+            <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-border/50 bg-card/40 px-4 py-6 shadow-2xl shadow-black/25 backdrop-blur-md sm:px-6 sm:py-8 md:px-10 md:py-12">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
               <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
               <div className="absolute left-0 top-24 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
@@ -184,6 +194,26 @@ function RapBattleAppInner() {
                       </div>
                     ))}
                   </div>
+
+                  {!currentQuery && !isLoading && recentSearches.length === 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        Probier mal
+                      </span>
+                      {EXAMPLE_SEARCHES.map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => {
+                            setSearchQuery(q)
+                            handleSearch(q, 'keyword')
+                          }}
+                          className="rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {!currentQuery && !isLoading && recentSearches.length > 0 && (
@@ -196,7 +226,7 @@ function RapBattleAppInner() {
                       {recentSearches.map((q) => (
                         <span
                           key={q}
-                          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary"
+                          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/35 px-3 py-1 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-primary focus-within:ring-2 focus-within:ring-primary"
                         >
                           <button
                             onClick={() => {
@@ -269,7 +299,7 @@ function RapBattleAppInner() {
 
           {hasActiveSearch && (
             <section className="space-y-6">
-              <div className="rounded-[28px] border border-border/40 bg-card/35 p-5 backdrop-blur-md">
+              <div className="rounded-3xl border border-border/40 bg-card/35 p-5 backdrop-blur-md">
                 <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-2xl font-bold font-headline">Ergebnisse filtern</h3>
@@ -288,7 +318,7 @@ function RapBattleAppInner() {
                       <button
                         key={key}
                         onClick={() => handleResultTypeFilter(key as 'keyword' | 'semantic')}
-                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 inline-flex items-center gap-1.5 ${
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                           resultTypeFilter === key
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                             : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
@@ -338,7 +368,7 @@ function RapBattleAppInner() {
                       <button
                         key={key}
                         onClick={() => setSortBy(key)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 ${
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                           sortBy === key
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                             : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
@@ -426,25 +456,17 @@ function RapBattleAppInner() {
                   )}
                 </>
               ) : results.length > 0 ? (
-                <div className="rounded-[28px] border border-dashed border-border/40 bg-card/20 py-24 text-center backdrop-blur-sm">
-                  <div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-secondary/20 p-8">
-                    <Search className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-muted-foreground">Keine {resultTypeFilter === 'keyword' ? 'Stichwort' : 'semantischen'}-Ergebnisse in diesem Set.</h3>
-                  <p className="mx-auto mt-3 max-w-sm text-muted-foreground">
-                    Wechsle den Filter oder erweitere die Suchanfrage.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Search}
+                  title={`Keine ${resultTypeFilter === 'keyword' ? 'Stichwort' : 'semantischen'}-Ergebnisse in diesem Set.`}
+                  description="Wechsle den Filter oder erweitere die Suchanfrage."
+                />
               ) : (
-                <div className="rounded-[28px] border border-dashed border-border/40 bg-card/20 py-24 text-center backdrop-blur-sm">
-                  <div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-secondary/20 p-8">
-                    <Search className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-muted-foreground">Keine Treffer gefunden.</h3>
-                  <p className="mx-auto mt-3 max-w-sm text-muted-foreground">
-                    Versuche breitere Begriffe wie „Boxen", „Mutter-Angle" oder „Tiervergleiche" — die semantische Suche findet auch verwandte Inhalte.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Search}
+                  title="Keine Treffer gefunden."
+                  description='Versuche breitere Begriffe wie „Boxen", „Mutter-Angle" oder „Tiervergleiche" — die semantische Suche findet auch verwandte Inhalte.'
+                />
               )}
             </section>
           )}

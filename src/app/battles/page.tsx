@@ -12,6 +12,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChevronLeft, ChevronRight, Play, Search, X, Swords, FileText, CalendarDays, Eye } from 'lucide-react'
+import { EmptyState } from '@/components/empty-state'
 import { toast } from 'sonner'
 import { battlesCache, generateCacheKey } from '@/lib/cache'
 
@@ -118,13 +119,10 @@ export default function BattlesPage() {
   if (!isMounted) return null
 
   return (
-      <main className="flex-1 overflow-y-auto p-6 md:p-10">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
+        <div className="max-w-6xl mx-auto space-y-8">
           {/* Page Header */}
           <div className="space-y-4">
-            <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← Zurück zur Suche
-            </Link>
             <div>
               <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">
                 Alle <span className="text-primary">Battles</span>
@@ -261,20 +259,14 @@ export default function BattlesPage() {
               </div>
             </>
           ) : (
-            <div className="text-center py-24 bg-card/20 rounded-3xl border border-dashed border-border/40">
-              <Swords className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-muted-foreground">Keine Battles gefunden</h3>
-              <p className="text-muted-foreground mt-2">
-                {searchQuery
-                  ? `Keine Ergebnisse für „${searchQuery}". Versuche einen anderen Suchbegriff.`
-                  : 'Schau später nochmal vorbei'}
-              </p>
-              {searchQuery && (
-                <Button variant="outline" size="sm" className="mt-4" onClick={clearSearch}>
-                  Suche zurücksetzen
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={Swords}
+              title="Keine Battles gefunden"
+              description={searchQuery
+                ? `Keine Ergebnisse für „${searchQuery}". Versuche einen anderen Suchbegriff.`
+                : 'Schau später nochmal vorbei'}
+              action={searchQuery ? { label: 'Suche zurücksetzen', onClick: clearSearch } : undefined}
+            />
           )}
         </div>
       </main>
@@ -349,7 +341,14 @@ function BattleCard({ battle }: BattleCardProps) {
       </CardHeader>
 
       <CardContent className="p-4 space-y-3">
-        {/* League Badge */}
+        {/* Title */}
+        <Link href={`/battles/${battle.id}`}>
+          <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors cursor-pointer">
+            {battle.title}
+          </h3>
+        </Link>
+
+        {/* League Badge & Year */}
         <div className="flex items-center gap-2">
           {battle.league === 'DLTLLY' ? (
             <img src="/league-dltlly.png" alt="DLTLLY" className="w-6 h-6 rounded-full object-cover" />
@@ -383,13 +382,6 @@ function BattleCard({ battle }: BattleCardProps) {
             </Badge>
           )}
         </div>
-
-        {/* Title */}
-        <Link href={`/battles/${battle.id}`}>
-          <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors cursor-pointer">
-            {battle.title}
-          </h3>
-        </Link>
       </CardContent>
 
       <CardFooter className="p-4 pt-0 gap-2">

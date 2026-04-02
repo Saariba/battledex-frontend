@@ -121,7 +121,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-border/40 bg-black/20 p-4">
           <div className="pointer-events-none absolute left-3 top-3 text-5xl leading-none text-primary/20">"</div>
           {hasContext && lineAbove && !showFullContext && (
-            <p className="mb-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/55">
+            <p className="mb-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/70">
               {shouldHighlight ? highlightKeywords(lineAbove, searchQuery) : lineAbove}
             </p>
           )}
@@ -129,7 +129,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
             "{displayLine}"
           </p>
           {hasContext && lineBelow && !showFullContext && (
-            <p className="mt-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/55">
+            <p className="mt-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/70">
               {shouldHighlight ? highlightKeywords(lineBelow, searchQuery) : lineBelow}
             </p>
           )}

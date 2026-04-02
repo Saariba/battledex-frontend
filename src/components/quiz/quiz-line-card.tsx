@@ -28,12 +28,12 @@ export function QuizLineCard({
         </Badge>
       </CardHeader>
       <CardContent>
-        <div className="relative rounded-[28px] border border-border/30 bg-black/20 p-6 sm:p-8">
+        <div className="relative rounded-3xl border border-border/30 bg-black/20 p-6 sm:p-8">
           <span className="pointer-events-none absolute -top-2 left-4 select-none text-6xl font-black leading-none text-primary/15 sm:left-6 sm:text-7xl" aria-hidden="true">
             &ldquo;
           </span>
           {showContextBefore && contextBefore ? (
-            <p className="mb-2 text-sm font-mono leading-tight text-muted-foreground/60">
+            <p className="mb-2 text-sm font-mono leading-tight text-muted-foreground/70">
               {contextBefore}
             </p>
           ) : null}
@@ -41,7 +41,7 @@ export function QuizLineCard({
             &ldquo;{line}&rdquo;
           </p>
           {showContextAfter && contextAfter ? (
-            <p className="mt-2 text-sm font-mono leading-tight text-muted-foreground/60">
+            <p className="mt-2 text-sm font-mono leading-tight text-muted-foreground/70">
               {contextAfter}
             </p>
           ) : null}

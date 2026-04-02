@@ -57,7 +57,7 @@ export default function StatsPage() {
   ] : []
 
   return (
-    <main className="flex-1 overflow-y-auto p-6 md:p-10">
+    <main className="flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Page Header */}
         <section className="text-center space-y-4 py-10">
