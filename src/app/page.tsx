@@ -10,8 +10,8 @@ import { RapperFilterDropdown } from "@/components/rapper-filter-dropdown"
 
 const VideoModal = dynamic(() => import('@/components/video-modal').then(m => ({ default: m.VideoModal })), { ssr: false })
 const CorrectionModal = dynamic(() => import('@/components/correction-modal').then(m => ({ default: m.CorrectionModal })), { ssr: false })
-import { useHomepage } from "@/hooks/use-homepage"
-import { Search, Shuffle, Sparkles, X, Clock, Copy, Check, FlaskConical, SlidersHorizontal } from "lucide-react"
+import { useHomepage, type SortOption } from "@/hooks/use-homepage"
+import { Search, Shuffle, Sparkles, X, Clock, Copy, Check, FlaskConical, SlidersHorizontal, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const SEMANTIC_BETA_DISMISSED_KEY = 'battledex_semantic_beta_dismissed'
@@ -31,6 +31,8 @@ export default function RapBattleApp() {
 
 function RapBattleAppInner() {
   const {
+    sortBy,
+    setSortBy,
     resultTypeFilter,
     selectedVideo,
     setSelectedVideo,
@@ -323,6 +325,30 @@ function RapBattleAppInner() {
                       </button>
                     </div>
                   )}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mr-1">
+                      <ArrowUpDown className="w-3 h-3 inline mr-1" />
+                      Sortierung
+                    </span>
+                    {([
+                      { key: 'relevance', label: 'Relevanz' },
+                      { key: 'views', label: 'Views' },
+                      { key: 'rapper', label: 'Rapper (A-Z)' },
+                    ] as const).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setSortBy(key)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 ${
+                          sortBy === key
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                            : 'border border-border/30 bg-background/35 text-foreground hover:border-primary/40 hover:text-primary'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
 
                   {rapperCounts.length > 0 && (
                     <div className="space-y-3">

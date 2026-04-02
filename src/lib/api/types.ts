@@ -29,6 +29,7 @@ export interface BackendSearchResultItem {
   youtube_timestamp_link: string
   score: number
   type: 'semantic' | 'exact' | 'random'
+  youtube_views?: number | null
 }
 
 export interface BackendSearchResponse {

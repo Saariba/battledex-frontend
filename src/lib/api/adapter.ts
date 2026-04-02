@@ -64,6 +64,7 @@ function adaptBackendResult(item: BackendSearchResultItem): SearchResult {
       youtubeUrl: item.video_url,
       thumbnailUrl,
       date: undefined,
+      youtubeViews: item.youtube_views ?? undefined,
     },
     rapper: {
       id: rapperId,

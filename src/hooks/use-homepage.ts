@@ -37,7 +37,10 @@ function removeRecentSearch(query: string) {
   }
 }
 
+export type SortOption = 'relevance' | 'views' | 'rapper'
+
 export function useHomepage() {
+  const [sortBy, setSortBy] = useState<SortOption>('relevance')
   const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'keyword' | 'semantic'>('all')
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
@@ -197,8 +200,19 @@ export function useHomepage() {
     }
   }, [isLoading, isLoadingMore, loadMore])
 
-  const filteredResults = results
-  const displayedResults = results
+  const sortedResults = useMemo(() => {
+    if (sortBy === 'relevance') return results
+    const sorted = [...results]
+    if (sortBy === 'views') {
+      sorted.sort((a, b) => (b.battle.youtubeViews ?? 0) - (a.battle.youtubeViews ?? 0))
+    } else if (sortBy === 'rapper') {
+      sorted.sort((a, b) => a.rapper.name.localeCompare(b.rapper.name, 'de'))
+    }
+    return sorted
+  }, [results, sortBy])
+
+  const filteredResults = sortedResults
+  const displayedResults = sortedResults
   const hasMore = searchHasMore
   const hasActiveSearch = Boolean(currentQuery || isLoading)
 
@@ -214,6 +228,8 @@ export function useHomepage() {
 
   return {
     // State
+    sortBy,
+    setSortBy,
     resultTypeFilter,
     setResultTypeFilter,
     selectedVideo,
