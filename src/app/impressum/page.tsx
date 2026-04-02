@@ -15,19 +15,10 @@ export default function ImpressumPage() {
             <CardTitle className="text-lg">Angaben gemäß § 5 TMG</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-muted-foreground">
-            <p>Max Mustermann</p>
-            <p>Musterstraße 1</p>
-            <p>12345 Musterstadt</p>
+            <p>S. Schönhofen</p>
+            <p>Großherzog-Friedrich-Str. 58</p>
+            <p>66121 Saarbrücken</p>
             <p>Deutschland</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/40 bg-card/40 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-lg">Kontakt</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm text-muted-foreground">
-            <p>E-Mail: kontakt@battledex.app</p>
           </CardContent>
         </Card>
 
