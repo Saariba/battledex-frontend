@@ -176,11 +176,6 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
         </div>
       )}
 
-      {!compact && !isFocused && !query && !isOpen && (
-        <p className="text-xs text-muted-foreground mt-2 font-mono">
-          Drücke <kbd className="px-1.5 py-0.5 rounded border border-border/60 bg-muted/50 text-[10px] font-semibold">/</kbd> zum Suchen
-        </p>
-      )}
     </div>
   )
 }
