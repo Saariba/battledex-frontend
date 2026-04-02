@@ -42,14 +42,13 @@ export default function RootLayout({
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5 overflow-x-hidden">
           <AppHeader />
           <div id="main-content">{children}</div>
-          <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-6 sm:p-8 border-t border-border/20 text-muted-foreground text-[10px] font-mono uppercase tracking-[0.2em]">
-            <span>BATTLEDEX</span>
-            <span>&bull;</span>
-            <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
-            <span>&bull;</span>
-            <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
-            <span>&bull;</span>
-            <a href="https://www.reddit.com/user/Saarstriker/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Kontakt</a>
+          <footer className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-5 sm:px-8 border-t border-border/15 text-xs text-muted-foreground/60">
+            <span>BattleDex</span>
+            <div className="flex gap-4">
+              <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
+              <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
+              <a href="https://www.reddit.com/user/Saarstriker/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Kontakt</a>
+            </div>
           </footer>
         </div>
         <Toaster />

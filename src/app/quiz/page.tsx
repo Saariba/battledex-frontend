@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { BadgeHelp, Brain, Flame, Layers3, RefreshCw, Star, Zap } from "lucide-react"
+import { Brain, Flame, Layers3, RefreshCw, Star, Zap } from "lucide-react"
 import { useDailyQuiz } from "@/hooks/use-daily-quiz"
 import { useDailyChallenge } from "@/hooks/use-daily-challenge"
 import { useChallengeStats } from "@/hooks/use-challenge-stats"
@@ -453,25 +453,14 @@ export default function QuizPage() {
 
   return (
     <main className="relative flex-1 px-4 py-8 md:px-8 md:py-10">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] grid-fade opacity-50" />
-
       <div className="relative mx-auto flex max-w-6xl flex-col gap-6">
-        <section className="overflow-hidden rounded-3xl border border-border/40 bg-card/40 px-5 py-5 shadow-2xl shadow-black/20 backdrop-blur-md sm:rounded-3xl sm:px-6 sm:py-8 md:px-8">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
-              <BadgeHelp className="h-3.5 w-3.5" />
-              Täglich neu
-            </div>
-            <div className="space-y-1 sm:space-y-2">
-              <h1 className="text-3xl font-black uppercase tracking-tight sm:text-5xl">
-                Errate den Rapper
-              </h1>
-              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
-                Eine Line. Fünf Versuche. Wer hat&apos;s gesagt?
-              </p>
-            </div>
-          </div>
+        <section className="px-1 pt-2 sm:pt-4">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+            Errate den Rapper
+          </h1>
+          <p className="mt-1 text-muted-foreground sm:text-lg">
+            Eine Line. Fünf Versuche. Wer hat&apos;s gesagt?
+          </p>
         </section>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

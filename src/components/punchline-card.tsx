@@ -5,10 +5,9 @@ import React, { useState } from "react"
 import Link from "next/link"
 import { SearchResult } from "@/lib/types"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShareButton } from "@/components/share-button"
-import { Play, ChevronDown, ChevronUp, Mic2, Swords, Waves } from "lucide-react"
+import { Play, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { highlightKeywords } from "@/lib/highlight"
 
@@ -38,8 +37,7 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
   const hasMoreContext = result.context.length > 3
 
   return (
-    <Card className="card-hover-effect relative overflow-hidden border-border/50 bg-card/55 shadow-xl shadow-black/20 backdrop-blur-md">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+    <Card className="card-hover-effect relative overflow-hidden border-border/50 bg-card/55 backdrop-blur-md">
       <CardHeader className="p-3 sm:p-5 pb-2 sm:pb-3">
         {onCorrection && (
           <button
@@ -56,70 +54,33 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
             </div>
           </button>
         )}
-        <div className="mb-3 flex flex-wrap items-center gap-2.5 pr-10">
-          <Badge variant="outline" className="rounded-full border-primary/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.2em] text-primary">
-              {result.battle.league === 'DLTLLY' ? (
-                <img
-                  src="/league-dltlly.png"
-                  alt="DLTLLY"
-                  className="mr-1 h-3 w-3 object-contain"
-                />
-              ) : (
-                <Swords className="mr-1 h-3 w-3" />
-              )}
-              {result.battle.league}
-            </Badge>
-            {result.type && (
-              <Badge
-                variant={result.type === 'exact' ? 'default' : 'outline'}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em]",
-                  result.type === 'exact'
-                    ? "bg-accent text-accent-foreground"
-                    : result.type === 'random'
-                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-                    : "border-primary/30 bg-primary/10 text-primary"
-                )}
-              >
-                {result.type === 'exact' ? 'Stichwort' : result.type === 'random' ? 'Zufällig' : 'Semantisch'}
-              </Badge>
-            )}
-          {typeof result.score === 'number' && result.type === 'semantic' && (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-background/40 px-2.5 py-1 text-[10px] font-code uppercase tracking-[0.18em] text-muted-foreground">
-              <Waves className="h-3 w-3 text-primary" />
-              <span>Semantisch-Konfidenz</span>
-              <span className="text-foreground">{(result.score * 100).toFixed(0)}%</span>
-            </div>
-          )}
-        </div>
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+        <div className="mb-2 flex items-center gap-2 pr-10 text-xs text-muted-foreground">
+          <span className="font-medium text-muted-foreground/70">{result.battle.league}</span>
+          <span className="text-border">·</span>
           {result.battleUuid ? (
-            <Link
-              href={`/battles/${result.battleUuid}`}
-              className="hover:text-primary transition-colors"
-            >
+            <Link href={`/battles/${result.battleUuid}`} className="truncate hover:text-primary transition-colors">
               {result.battle.title}
             </Link>
           ) : (
-            result.battle.title
+            <span className="truncate">{result.battle.title}</span>
           )}
-        </h3>
+          {typeof result.score === 'number' && result.type === 'semantic' && (
+            <>
+              <span className="text-border">·</span>
+              <span>{(result.score * 100).toFixed(0)}%</span>
+            </>
+          )}
+        </div>
+        <Link
+          href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
+          className="text-sm font-bold text-primary hover:text-primary/80 transition-colors"
+        >
+          {result.rapper.name}
+        </Link>
       </CardHeader>
 
       <CardContent className="p-3 sm:p-5 pt-0">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="rounded-full bg-primary/15 p-1.5 text-primary">
-            <Mic2 className="h-3.5 w-3.5" />
-          </div>
-          <Link
-            href={`/rappers/${encodeURIComponent(result.rapper.name)}`}
-            className="rounded px-2 py-0.5 text-sm font-bold uppercase tracking-[0.16em] text-primary transition-all duration-300 hover:bg-primary/10 hover:text-primary/80"
-          >
-            {result.rapper.name}
-          </Link>
-        </div>
-        <div className="relative mb-5 overflow-hidden rounded-2xl border border-border/40 bg-black/20 p-4">
-          <div className="pointer-events-none absolute left-3 top-3 text-5xl leading-none text-primary/20">"</div>
+        <div className="relative mb-4 overflow-hidden rounded-xl border border-border/30 bg-black/20 p-4">
           {hasContext && lineAbove && !showFullContext && (
             <p className="mb-2 pl-4 sm:pl-5 text-xs sm:text-sm font-mono leading-tight text-muted-foreground/70">
               {shouldHighlight ? highlightKeywords(lineAbove, searchQuery) : lineAbove}
@@ -179,12 +140,12 @@ export function PunchlineCard({ result, searchQuery, onPlayVideo, onCorrection }
           <ShareButton result={result} />
           <Button
             size="sm"
-            className="bg-accent hover:bg-accent/80 text-white font-semibold transition-all duration-300 hover:scale-105 text-xs sm:text-sm"
+            variant="outline"
+            className="text-xs sm:text-sm"
             onClick={() => onPlayVideo(result)}
           >
             <Play className="mr-1 sm:mr-1.5 w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
-            <span className="hidden sm:inline">Video abspielen</span>
-            <span className="sm:hidden">Video</span>
+            Video
           </Button>
         </div>
       </CardFooter>
