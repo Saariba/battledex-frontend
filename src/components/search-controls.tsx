@@ -55,13 +55,13 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
     e.preventDefault()
     close()
     if (!query.trim()) return
-    onSearch(query, 'hybrid')
+    onSearch(query, 'keyword')
   }
 
   const handleSelect = (suggestion: string) => {
     setQuery(suggestion)
     close()
-    onSearch(suggestion, 'hybrid')
+    onSearch(suggestion, 'keyword')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

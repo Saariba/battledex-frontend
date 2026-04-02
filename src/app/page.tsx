@@ -106,7 +106,7 @@ function RapBattleAppInner() {
                     <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                       {!isLoading && totalResults > 0
                         ? `${totalResults.toLocaleString()} Treffer gefunden`
-                        : 'Suche nach Bedeutung, dann filtere mit Stichwort- oder Semantik-Filter und Rapper-Auswahl.'}
+                        : 'Suche nach Stichwörtern oder wechsle zur semantischen Suche.'}
                     </p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@ function RapBattleAppInner() {
                           <button
                             onClick={() => {
                               setSearchQuery(q)
-                              handleSearch(q, 'hybrid')
+                              handleSearch(q, 'keyword')
                             }}
                           >
                             {q}
@@ -274,7 +274,7 @@ function RapBattleAppInner() {
                   <div>
                     <h3 className="text-2xl font-bold font-headline">Ergebnisse filtern</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Wechsle zwischen allen Treffern, exaktem Wortlaut und semantischen Ergebnissen.
+                      Wechsle zwischen Stichwort- und semantischer Suche.
                     </p>
                   </div>
                 </div>
@@ -282,13 +282,12 @@ function RapBattleAppInner() {
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { key: 'all', label: 'Alle' },
                       { key: 'keyword', label: 'Stichwort' },
                       { key: 'semantic', label: 'Semantisch' },
                     ].map(({ key, label }) => (
                       <button
                         key={key}
-                        onClick={() => handleResultTypeFilter(key as 'all' | 'keyword' | 'semantic')}
+                        onClick={() => handleResultTypeFilter(key as 'keyword' | 'semantic')}
                         className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 inline-flex items-center gap-1.5 ${
                           resultTypeFilter === key
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
@@ -310,7 +309,7 @@ function RapBattleAppInner() {
                     ))}
                   </div>
 
-                  {(resultTypeFilter === 'semantic' || resultTypeFilter === 'all') && !semanticBetaDismissed && (
+                  {resultTypeFilter === 'semantic' && !semanticBetaDismissed && (
                     <div className="flex items-start gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3">
                       <FlaskConical className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-muted-foreground flex-1">

@@ -41,7 +41,7 @@ export type SortOption = 'relevance' | 'views' | 'rapper'
 
 export function useHomepage() {
   const [sortBy, setSortBy] = useState<SortOption>('relevance')
-  const [resultTypeFilter, setResultTypeFilter] = useState<'all' | 'keyword' | 'semantic'>('all')
+  const [resultTypeFilter, setResultTypeFilter] = useState<'keyword' | 'semantic'>('keyword')
   const [selectedVideo, setSelectedVideo] = useState<SearchResult | null>(null)
   const [correctionResult, setCorrectionResult] = useState<SearchResult | null>(null)
   const [isMounted, setIsMounted] = useState(false)
@@ -83,9 +83,9 @@ export function useHomepage() {
 
   const handleSimilarWordClick = useCallback((word: string) => {
     setSearchQuery(word)
-    setResultTypeFilter('all')
+    setResultTypeFilter('keyword')
     router.push(`?q=${encodeURIComponent(word)}`, { scroll: false })
-    performSearch(word, 'hybrid')
+    performSearch(word, 'keyword')
   }, [router, performSearch])
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function useHomepage() {
       if (!hasRunInitialSearch.current || q !== currentQuery) {
         hasRunInitialSearch.current = true
         setSearchQuery(q)
-        performSearch(q, "hybrid")
+        performSearch(q, "keyword")
       }
     } else {
       hasRunInitialSearch.current = false
@@ -124,9 +124,9 @@ export function useHomepage() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword' | 'hybrid' = 'hybrid') => {
+  const handleSearch = useCallback((query: string, mode: 'semantic' | 'keyword' | 'hybrid' = 'keyword') => {
     setSelectedRapper(null)
-    setResultTypeFilter('all')
+    setResultTypeFilter(mode === 'semantic' ? 'semantic' : 'keyword')
     router.push(`?q=${encodeURIComponent(query)}`, { scroll: false })
     performSearch(query, mode)
     if (query.trim()) {
@@ -138,7 +138,7 @@ export function useHomepage() {
   const handleRapperFilter = useCallback((rapperName: string | null) => {
     setSelectedRapper(rapperName)
     if (currentQuery) {
-      const mode = resultTypeFilter === 'keyword' ? 'keyword' : resultTypeFilter === 'semantic' ? 'semantic' : 'hybrid'
+      const mode = resultTypeFilter === 'semantic' ? 'semantic' : 'keyword'
       performSearch(currentQuery, mode, rapperName)
     }
   }, [currentQuery, resultTypeFilter, performSearch])
@@ -166,11 +166,10 @@ export function useHomepage() {
     setIsMounted(true)
   }, [])
 
-  const handleResultTypeFilter = useCallback((filter: 'all' | 'keyword' | 'semantic') => {
+  const handleResultTypeFilter = useCallback((filter: 'keyword' | 'semantic') => {
     setResultTypeFilter(filter)
     if (currentQuery) {
-      const mode = filter === 'keyword' ? 'keyword' : filter === 'semantic' ? 'semantic' : 'hybrid'
-      performSearch(currentQuery, mode, selectedRapper)
+      performSearch(currentQuery, filter, selectedRapper)
     }
   }, [currentQuery, selectedRapper, performSearch])
 
