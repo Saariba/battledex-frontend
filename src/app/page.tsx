@@ -23,11 +23,9 @@ const LEAGUE_MARKS = [
 ]
 
 const EXAMPLE_SEARCHES = [
-  "Tiervergleiche",
-  "Mutter-Angle",
-  "Boxen",
-  "Wortspiel",
-  "Essen",
+  "Mutter",
+  "Scheiße",
+  "Pastinaken-Babybrei",
 ]
 
 export default function RapBattleApp() {
