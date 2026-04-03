@@ -50,7 +50,7 @@ export const searchService = {
   /**
    * Fetch random punchlines for homepage showcase
    */
-  async getRandomLines(count: number = 5): Promise<SearchResult[]> {
+  async getRandomLines(count: number = 6): Promise<SearchResult[]> {
     const response = await apiRequest<{ lines: BackendSearchResultItem[], count: number }>(
       `${config.endpoints.randomLines}?count=${count}`
     )

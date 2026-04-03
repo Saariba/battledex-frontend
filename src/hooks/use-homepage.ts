@@ -64,7 +64,7 @@ export function useHomepage() {
   const loadFeaturedBars = useCallback(async () => {
     try {
       setIsShuffling(true)
-      const lines = await searchService.getRandomLines(5)
+      const lines = await searchService.getRandomLines(6)
       setFeaturedBars(lines)
     } catch {
       // Silently fail - featured bars are non-critical
