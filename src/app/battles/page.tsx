@@ -11,23 +11,25 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronLeft, ChevronRight, Play, Search, X, Swords, FileText, CalendarDays, Eye } from 'lucide-react'
+import { Play, Search, X, Swords, FileText, CalendarDays, Eye, Loader2 } from 'lucide-react'
 import { EmptyState } from '@/components/empty-state'
 import { toast } from 'sonner'
-import { battlesCache, generateCacheKey } from '@/lib/cache'
 
 const BATTLES_PER_PAGE = 20
 
 export default function BattlesPage() {
   const [battles, setBattles] = useState<Battle[]>([])
   const [total, setTotal] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortValue, setSortValue] = useState('date_desc')
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
@@ -40,41 +42,34 @@ export default function BattlesPage() {
     }
     debounceTimerRef.current = setTimeout(() => {
       setSearchQuery(searchInput)
-      setCurrentPage(1)
     }, 400)
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     }
   }, [searchInput])
 
+  // Reset and load when search or sort changes
   useEffect(() => {
     if (!isMounted) return
-    loadBattles()
-  }, [currentPage, searchQuery, sortValue, isMounted])
+    // Cancel any in-flight request
+    if (abortRef.current) abortRef.current.abort()
+    setBattles([])
+    setTotal(0)
+    setHasMore(true)
+    loadBattles(0, true)
+  }, [searchQuery, sortValue, isMounted])
 
-  const clearSearch = useCallback(() => {
-    setSearchInput('')
-    setSearchQuery('')
-    setCurrentPage(1)
-  }, [])
-
-  const loadBattles = async () => {
-    try {
+  const loadBattles = async (offset: number, isInitial: boolean) => {
+    if (isInitial) {
       setIsLoading(true)
-      const offset = (currentPage - 1) * BATTLES_PER_PAGE
+    } else {
+      setIsLoadingMore(true)
+    }
 
-      // Try cache first
-      const cacheKey = generateCacheKey('battles', currentPage, BATTLES_PER_PAGE, offset, searchQuery, sortValue)
-      const cached = battlesCache.get<{ battles: Battle[], total: number }>(cacheKey)
+    const controller = new AbortController()
+    abortRef.current = controller
 
-      if (cached) {
-        setBattles(cached.battles)
-        setTotal(cached.total)
-        setIsLoading(false)
-        return
-      }
-
-      // Fetch if not cached
+    try {
       const response = await battlesService.listBattles(
         BATTLES_PER_PAGE,
         offset,
@@ -82,194 +77,187 @@ export default function BattlesPage() {
         sortValue
       )
 
-      const battlesList = response.battles || []
+      if (controller.signal.aborted) return
+
+      const newBattles = response.battles || []
       const totalCount = response.total
 
-      // Cache the result
-      battlesCache.set(cacheKey, { battles: battlesList, total: totalCount })
+      if (isInitial) {
+        setBattles(newBattles)
+      } else {
+        setBattles(prev => {
+          const existingIds = new Set(prev.map(b => b.id))
+          const unique = newBattles.filter(b => !existingIds.has(b.id))
+          return [...prev, ...unique]
+        })
+      }
 
-      setBattles(battlesList)
       setTotal(totalCount)
+      setHasMore(offset + newBattles.length < totalCount)
     } catch (error) {
+      if (controller.signal.aborted) return
       console.error('Failed to load battles:', error)
       toast.error('Battles konnten nicht geladen werden. Bitte erneut versuchen.')
-      setBattles([])
-      setTotal(0)
+      if (isInitial) {
+        setBattles([])
+        setTotal(0)
+      }
+      setHasMore(false)
     } finally {
-      setIsLoading(false)
+      if (!controller.signal.aborted) {
+        setIsLoading(false)
+        setIsLoadingMore(false)
+      }
     }
   }
 
-  const totalPages = total > 0 ? Math.ceil(total / BATTLES_PER_PAGE) : 1
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore || isLoading) return
+    loadBattles(battles.length, false)
+  }, [isLoadingMore, hasMore, isLoading, battles.length, searchQuery, sortValue])
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading && !isLoadingMore) {
+          if (debounceTimer) clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => loadMore(), 200)
+        }
+      },
+      { rootMargin: '400px' }
+    )
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
     }
-  }
+
+    return () => {
+      observer.disconnect()
+      if (debounceTimer) clearTimeout(debounceTimer)
+    }
+  }, [isLoading, isLoadingMore, loadMore])
+
+  const clearSearch = useCallback(() => {
+    setSearchInput('')
+    setSearchQuery('')
+  }, [])
 
   if (!isMounted) return null
 
   return (
-      <main className="flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Page Header */}
-          <div className="space-y-4">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">
-                Alle <span className="text-primary">Battles</span>
-              </h1>
-              <p className="text-muted-foreground text-lg mt-2">
-                {searchQuery
-                  ? `${total.toLocaleString()} Battle${total !== 1 ? 's' : ''} gefunden für „${searchQuery}"`
-                  : total > 0
-                    ? `${total.toLocaleString()} Battles in der Datenbank`
-                    : 'Battles werden geladen...'}
-              </p>
-            </div>
-
-            {/* Search Input & Sort */}
-            <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="text"
-                  placeholder="Battles suchen..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-9 pr-9 bg-card/60 border-border/50 focus:border-primary/50"
-                />
-                {searchInput && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <Select value={sortValue} onValueChange={(value) => { setSortValue(value); setCurrentPage(1) }}>
-                <SelectTrigger className="w-full sm:w-[220px] bg-card/60 border-border/50">
-                  <SelectValue placeholder="Sortierung" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date_desc">Neueste zuerst</SelectItem>
-                  <SelectItem value="date_asc">Älteste zuerst</SelectItem>
-                  <SelectItem value="views_desc">Meiste Views</SelectItem>
-                  <SelectItem value="views_asc">Wenigste Views</SelectItem>
-                  <SelectItem value="title_asc">Titel A-Z</SelectItem>
-                  <SelectItem value="title_desc">Titel Z-A</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+    <main className="flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Page Header */}
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">
+              Alle <span className="text-primary">Battles</span>
+            </h1>
+            <p className="text-muted-foreground text-lg mt-2">
+              {searchQuery
+                ? `${total.toLocaleString()} Battle${total !== 1 ? 's' : ''} gefunden für „${searchQuery}"`
+                : total > 0
+                  ? `${total.toLocaleString()} Battles in der Datenbank`
+                  : isLoading
+                    ? 'Battles werden geladen...'
+                    : 'Keine Battles gefunden'}
+            </p>
           </div>
 
-          {/* Pagination Info */}
-          {!isLoading && battles.length > 0 && total > 0 && (
-            <div className="flex items-center justify-between border-b border-border/40 pb-4">
-              <p className="text-sm text-muted-foreground">
-                {((currentPage - 1) * BATTLES_PER_PAGE) + 1} – {Math.min(currentPage * BATTLES_PER_PAGE, total)} von {total.toLocaleString()} Battles
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Seite {currentPage} von {totalPages}
-              </p>
+          {/* Search Input & Sort */}
+          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Battles suchen..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9 pr-9 bg-card/60 border-border/50 focus:border-primary/50"
+              />
+              {searchInput && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          )}
+            <Select value={sortValue} onValueChange={(value) => setSortValue(value)}>
+              <SelectTrigger className="w-full sm:w-[220px] bg-card/60 border-border/50">
+                <SelectValue placeholder="Sortierung" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date_desc">Neueste zuerst</SelectItem>
+                <SelectItem value="date_asc">Älteste zuerst</SelectItem>
+                <SelectItem value="views_desc">Meiste Views</SelectItem>
+                <SelectItem value="views_asc">Wenigste Views</SelectItem>
+                <SelectItem value="title_asc">Titel A-Z</SelectItem>
+                <SelectItem value="title_desc">Titel Z-A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          {/* Loading State */}
-          {isLoading ? (
+        {/* Count Info */}
+        {!isLoading && battles.length > 0 && total > 0 && (
+          <div className="border-b border-border/40 pb-4">
+            <p className="text-sm text-muted-foreground">
+              {battles.length} von {total.toLocaleString()} Battles angezeigt
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-80 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
+            ))}
+          </div>
+        ) : battles.length > 0 ? (
+          <>
+            {/* Battles Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="h-80 rounded-2xl bg-card/50 animate-pulse border border-border/20" />
+              {battles.map((battle) => (
+                <BattleCard key={battle.id} battle={battle} />
               ))}
             </div>
-          ) : battles.length > 0 ? (
-            <>
-              {/* Battles Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {battles.map((battle) => (
-                  <BattleCard key={battle.id} battle={battle} />
-                ))}
+
+            {/* Infinite scroll trigger */}
+            <div ref={loadMoreRef} className="h-1" />
+
+            {/* Loading more indicator */}
+            {isLoadingMore && (
+              <div className="flex items-center justify-center py-8 gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">Weitere Battles laden...</span>
               </div>
+            )}
 
-              {/* Pagination Controls */}
-              <div className="flex items-center justify-center gap-4 pt-8">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
-                  className="gap-2 transition-all duration-300"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Zurück
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum
-                    if (totalPages <= 5) {
-                      pageNum = i + 1
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i
-                    } else {
-                      pageNum = currentPage - 2 + i
-                    }
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => {
-                          setCurrentPage(pageNum)
-                          window.scrollTo({ top: 0, behavior: 'smooth' })
-                        }}
-                        className={`w-10 transition-all duration-300 ${
-                          currentPage === pageNum ? 'shadow-lg shadow-primary/30 scale-110' : ''
-                        }`}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className="gap-2 transition-all duration-300"
-                >
-                  Weiter
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <EmptyState
-              icon={Swords}
-              title="Keine Battles gefunden"
-              description={searchQuery
-                ? `Keine Ergebnisse für „${searchQuery}". Versuche einen anderen Suchbegriff.`
-                : 'Schau später nochmal vorbei'}
-              action={searchQuery ? { label: 'Suche zurücksetzen', onClick: clearSearch } : undefined}
-            />
-          )}
-        </div>
-      </main>
+            {/* End of list */}
+            {!hasMore && battles.length >= total && battles.length > BATTLES_PER_PAGE && (
+              <p className="text-center text-sm text-muted-foreground py-6">
+                Alle {total.toLocaleString()} Battles geladen
+              </p>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon={Swords}
+            title="Keine Battles gefunden"
+            description={searchQuery
+              ? `Keine Ergebnisse für „${searchQuery}". Versuche einen anderen Suchbegriff.`
+              : 'Schau später nochmal vorbei'}
+            action={searchQuery ? { label: 'Suche zurücksetzen', onClick: clearSearch } : undefined}
+          />
+        )}
+      </div>
+    </main>
   )
 }
 
