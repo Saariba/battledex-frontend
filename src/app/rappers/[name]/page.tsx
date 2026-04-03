@@ -4,15 +4,16 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
-import { rappersService, type RapperProfile, type RapperBattle } from '@/lib/api/rappers'
+import { rappersService, type RapperProfile, type RapperBattle, type RapperTopWord } from '@/lib/api/rappers'
 import { extractYouTubeId } from '@/lib/api/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Mic2, Play, Swords, FileText, Search, ArrowLeft, ScrollText, CalendarDays, Eye } from 'lucide-react'
+import { Mic2, Play, Swords, FileText, Search, ArrowLeft, ScrollText, CalendarDays, Eye, Type, BookOpen, Brain, Calendar, HelpCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export default function RapperProfilePage() {
   const params = useParams()
@@ -53,10 +54,6 @@ export default function RapperProfilePage() {
 
   if (!isMounted) return null
 
-  const avgLinesPerBattle = profile && profile.totalBattles > 0
-    ? Math.round(profile.totalLines / profile.totalBattles)
-    : 0
-
   return (
     <main className="flex-1 overflow-y-auto p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -92,87 +89,42 @@ export default function RapperProfilePage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="bg-primary/10 p-3 rounded-xl">
-                    <Swords className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black font-headline text-primary">
-                      {profile.totalBattles}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Battles</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="bg-green-500/10 p-3 rounded-xl">
-                    <FileText className="w-6 h-6 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black font-headline text-green-500">
-                      {profile.totalLines.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Zeilen</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="bg-purple-500/10 p-3 rounded-xl">
-                    <FileText className="w-6 h-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black font-headline text-purple-500">
-                      ~{avgLinesPerBattle}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Zeilen / Battle</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="bg-red-500/10 p-3 rounded-xl">
-                    <Eye className="w-6 h-6 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black font-headline text-red-500">
-                      {profile.totalYoutubeViews >= 1_000_000
-                        ? `${(profile.totalYoutubeViews / 1_000_000).toFixed(1)}M`
-                        : profile.totalYoutubeViews >= 1_000
-                          ? `${(profile.totalYoutubeViews / 1_000).toFixed(0)}K`
-                          : profile.totalYoutubeViews.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Views gesamt</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="bg-orange-500/10 p-3 rounded-xl">
-                    <Eye className="w-6 h-6 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black font-headline text-orange-500">
-                      {profile.avgYoutubeViews >= 1_000_000
-                        ? `${(profile.avgYoutubeViews / 1_000_000).toFixed(1)}M`
-                        : profile.avgYoutubeViews >= 1_000
-                          ? `${(profile.avgYoutubeViews / 1_000).toFixed(0)}K`
-                          : profile.avgYoutubeViews.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Ø Views / Battle</p>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              <StatCard icon={Swords} color="primary" value={profile.totalBattles} label="Battles" />
+              <StatCard icon={Eye} color="red-500" value={formatViews(profile.totalYoutubeViews)} label="Views gesamt" />
+              <StatCard icon={Eye} color="orange-500" value={formatViews(profile.avgYoutubeViews)} label="Ø Views / Battle" />
+              <StatCard icon={Type} color="cyan-500" value={profile.totalWords.toLocaleString()} label="Wörter gesamt" />
+              <StatCard icon={BookOpen} color="indigo-500" value={profile.vocabularySize.toLocaleString()} label="Einzigartige Wörter" />
+              <StatCard icon={Brain} color="pink-500" value={`${(profile.vocabularyRichness * 100).toFixed(1)}%`} label="Wortschatz-Vielfalt" tooltip="Anteil einzigartiger Wörter am Gesamttext" />
             </div>
+
+            {/* Top Words */}
+            {profile.topWords.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+
+                  Top-Vokabular
+                </h2>
+                <div className="flex gap-2 overflow-x-auto">
+                  {profile.topWords.filter(w => w.pos === 'NOUN').slice(0, 5).map((word) => (
+                    <Badge
+                      key={word.lemma}
+                      variant="outline"
+                      className="text-sm px-3 py-1.5 font-medium border-indigo-500/30 text-indigo-400 bg-indigo-500/5 shrink-0"
+                    >
+                      {word.lemma}
+                      <span className="ml-1.5 text-xs text-muted-foreground font-code">{word.count}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Battles List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                  <span className="text-primary">#</span>
+
                   Battle-Verlauf
                   <span className="text-sm font-normal text-muted-foreground">
                     ({profile.battles.length})
@@ -242,6 +194,59 @@ export default function RapperProfilePage() {
         )}
       </div>
     </main>
+  )
+}
+
+function formatViews(views: number): string {
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`
+  if (views >= 1_000) return `${(views / 1_000).toFixed(0)}K`
+  return views.toLocaleString()
+}
+
+const STAT_COLORS: Record<string, { bg: string; text: string }> = {
+  'primary': { bg: 'bg-primary/10', text: 'text-primary' },
+  'green-500': { bg: 'bg-green-500/10', text: 'text-green-500' },
+  'purple-500': { bg: 'bg-purple-500/10', text: 'text-purple-500' },
+  'red-500': { bg: 'bg-red-500/10', text: 'text-red-500' },
+  'orange-500': { bg: 'bg-orange-500/10', text: 'text-orange-500' },
+  'cyan-500': { bg: 'bg-cyan-500/10', text: 'text-cyan-500' },
+  'teal-500': { bg: 'bg-teal-500/10', text: 'text-teal-500' },
+  'indigo-500': { bg: 'bg-indigo-500/10', text: 'text-indigo-500' },
+  'pink-500': { bg: 'bg-pink-500/10', text: 'text-pink-500' },
+  'amber-500': { bg: 'bg-amber-500/10', text: 'text-amber-500' },
+}
+
+function StatCard({ icon: Icon, color, value, label, tooltip }: {
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  value: string | number
+  label: string
+  tooltip?: string
+}) {
+  const c = STAT_COLORS[color] ?? STAT_COLORS['primary']
+  return (
+    <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+      <CardContent className="p-5 text-center relative">
+        {tooltip && (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="absolute top-2 right-2 text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px]">
+                <p>{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        <p className={`text-3xl font-black font-headline ${c.text}`}>
+          {value}
+        </p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">{label}</p>
+      </CardContent>
+    </Card>
   )
 }
 

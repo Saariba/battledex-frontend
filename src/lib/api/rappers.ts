@@ -17,6 +17,12 @@ interface BackendRapperBattle {
   youtube_views?: number
 }
 
+interface BackendRapperTopWord {
+  lemma: string
+  pos: string
+  count: number
+}
+
 interface BackendRapperProfile {
   name: string
   aka?: string[]
@@ -24,6 +30,13 @@ interface BackendRapperProfile {
   total_lines: number
   total_youtube_views: number
   avg_youtube_views: number
+  total_words: number
+  avg_words_per_line: number
+  first_battle_date?: string
+  latest_battle_date?: string
+  vocabulary_size: number
+  vocabulary_richness: number
+  top_words: BackendRapperTopWord[]
   battles: BackendRapperBattle[]
 }
 
@@ -38,6 +51,12 @@ export interface RapperBattle {
   youtubeViews?: number
 }
 
+export interface RapperTopWord {
+  lemma: string
+  pos: string
+  count: number
+}
+
 export interface RapperProfile {
   name: string
   aliases: string[]
@@ -45,6 +64,13 @@ export interface RapperProfile {
   totalLines: number
   totalYoutubeViews: number
   avgYoutubeViews: number
+  totalWords: number
+  avgWordsPerLine: number
+  firstBattleDate?: string
+  latestBattleDate?: string
+  vocabularySize: number
+  vocabularyRichness: number
+  topWords: RapperTopWord[]
   battles: RapperBattle[]
 }
 
@@ -56,6 +82,13 @@ function adaptRapperProfile(backend: BackendRapperProfile): RapperProfile {
     totalLines: backend.total_lines,
     totalYoutubeViews: backend.total_youtube_views,
     avgYoutubeViews: backend.avg_youtube_views,
+    totalWords: backend.total_words ?? 0,
+    avgWordsPerLine: backend.avg_words_per_line ?? 0,
+    firstBattleDate: backend.first_battle_date,
+    latestBattleDate: backend.latest_battle_date,
+    vocabularySize: backend.vocabulary_size ?? 0,
+    vocabularyRichness: backend.vocabulary_richness ?? 0,
+    topWords: backend.top_words ?? [],
     battles: backend.battles.map(b => ({
       id: b.battle_id,
       title: b.title,
