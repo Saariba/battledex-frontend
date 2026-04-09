@@ -69,9 +69,10 @@ export function SearchControls({ onSearch, isLoading, value, onValueChange, inpu
   }
 
   const handleSelect = (suggestion: string) => {
-    setQuery(suggestion)
+    const cleaned = suggestion.replace(/^\.{3}\s*/, '').replace(/\s*\.{3}$/, '').trim()
+    setQuery(cleaned)
     close()
-    onSearch(suggestion, mode)
+    onSearch(cleaned, mode)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
