@@ -41,6 +41,39 @@ export interface RapperTotalsResponse {
   rappers: RapperTotal[]
 }
 
+// --- Vocab Duel types ---
+
+export interface VocabDuelRapper {
+  name: string
+  total_words: number
+  vocab_size: number
+}
+
+export interface VocabDuelWord {
+  lemma: string
+  count_a: number
+  count_b: number
+  rate_a: number
+  rate_b: number
+}
+
+export interface VocabDuelExclusiveWord {
+  lemma: string
+  count: number
+}
+
+export interface VocabDuelResponse {
+  rapper_a: VocabDuelRapper
+  rapper_b: VocabDuelRapper
+  jaccard_percent: number
+  shared_count: number
+  only_a_count: number
+  only_b_count: number
+  top_diff: VocabDuelWord[]
+  top_only_a: VocabDuelExclusiveWord[]
+  top_only_b: VocabDuelExclusiveWord[]
+}
+
 // --- Service ---
 
 export const wordStatsService = {
@@ -79,6 +112,20 @@ export const wordStatsService = {
   async getRapperTotals(signal?: AbortSignal): Promise<RapperTotalsResponse> {
     return apiRequest<RapperTotalsResponse>(
       config.endpoints.rappersTotals,
+      { signal }
+    )
+  },
+
+  async getVocabDuel(
+    rapperA: string,
+    rapperB: string,
+    pos?: string,
+    signal?: AbortSignal
+  ): Promise<VocabDuelResponse> {
+    const params = new URLSearchParams({ rapper_a: rapperA, rapper_b: rapperB })
+    if (pos) params.set("pos", pos)
+    return apiRequest<VocabDuelResponse>(
+      `${config.endpoints.vocabDuel}?${params}`,
       { signal }
     )
   },

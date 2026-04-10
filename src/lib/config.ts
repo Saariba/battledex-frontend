@@ -26,6 +26,7 @@ export const config = {
     wordStats: '/api/v1/word-stats',
     wordStatsTopRappers: '/api/v1/word-stats/top-rappers',
     rappersTotals: '/api/v1/rappers/totals',
+    vocabDuel: '/api/v1/vocab-duel',
   },
 } as const
 

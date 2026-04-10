@@ -1,14 +1,18 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Search, Hash, Users } from "lucide-react"
+import { Search, Hash, Users, Swords, Percent } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { wordStatsService, type WordStat, type WordRapperEntry } from "@/lib/api/word-stats"
+import { wordStatsService, type WordStat, type WordRapperEntry, type VocabDuelResponse } from "@/lib/api/word-stats"
+import { rappersService } from "@/lib/api/rappers"
 import { RapperMultiSelect } from "@/components/rapper-multi-select"
+import { RapperSingleSelect } from "@/components/rapper-single-select"
 import { WordLookupChart, type WordChartEntry } from "@/components/word-lookup-chart"
+import { VocabDuelChart } from "@/components/vocab-duel-chart"
 
 export default function WordStatsPage() {
   // --- Search state ---
@@ -29,6 +33,19 @@ export default function WordStatsPage() {
   const [rapperTotals, setRapperTotals] = useState<Map<string, number>>(new Map())
   const [rapperBattles, setRapperBattles] = useState<Map<string, number>>(new Map())
   const totalsLoaded = useRef(false)
+
+  // --- Shared rapper list ---
+  const [allRappers, setAllRappers] = useState<string[]>([])
+  const [rappersLoading, setRappersLoading] = useState(false)
+  const rappersFetched = useRef(false)
+
+  // --- Duel state ---
+  const [duelRapperA, setDuelRapperA] = useState<string | null>(null)
+  const [duelRapperB, setDuelRapperB] = useState<string | null>(null)
+  const [duelResult, setDuelResult] = useState<VocabDuelResponse | null>(null)
+  const [isDuelLoading, setIsDuelLoading] = useState(false)
+  const [duelMode, setDuelMode] = useState<"absolute" | "normalized" | "perBattle">("normalized")
+  const [duelPos, setDuelPos] = useState<string>("all")
 
   // Debounce search query
   useEffect(() => {
@@ -62,7 +79,7 @@ export default function WordStatsPage() {
 
   // Load rapper totals for normalization (once, lazily)
   useEffect(() => {
-    if (totalsLoaded.current || mode === "absolute") return
+    if (totalsLoaded.current || (mode === "absolute" && duelMode === "absolute")) return
     totalsLoaded.current = true
     wordStatsService
       .getRapperTotals()
@@ -77,7 +94,51 @@ export default function WordStatsPage() {
         setRapperBattles(battleMap)
       })
       .catch(() => {})
-  }, [mode])
+  }, [mode, duelMode])
+
+  // Fetch all rapper names (shared across tabs, lazy)
+  const loadAllRappers = useCallback(() => {
+    if (rappersFetched.current) return
+    rappersFetched.current = true
+    setRappersLoading(true)
+    async function fetchAll() {
+      const allNames: string[] = []
+      let offset = 0
+      const pageSize = 1000
+      while (true) {
+        const res = await rappersService.listRappers(pageSize, offset)
+        allNames.push(...res.rappers.map((r) => r.name))
+        if (allNames.length >= res.total || res.rappers.length < pageSize) break
+        offset += pageSize
+      }
+      return allNames
+    }
+    fetchAll()
+      .then(setAllRappers)
+      .catch(() => {})
+      .finally(() => setRappersLoading(false))
+  }, [])
+
+  // Fetch duel data when both rappers are selected
+  useEffect(() => {
+    if (!duelRapperA || !duelRapperB || duelRapperA === duelRapperB) {
+      setDuelResult(null)
+      return
+    }
+    const controller = new AbortController()
+    setIsDuelLoading(true)
+    const posFilter = duelPos === "all" ? undefined : duelPos
+    wordStatsService
+      .getVocabDuel(duelRapperA, duelRapperB, posFilter, controller.signal)
+      .then(setDuelResult)
+      .catch((err) => {
+        if (err?.message !== "Request was cancelled") {
+          toast.error("Fehler beim Laden des Vokabel-Duells")
+        }
+      })
+      .finally(() => setIsDuelLoading(false))
+    return () => controller.abort()
+  }, [duelRapperA, duelRapperB, duelPos])
 
   // Fetch per-rapper data when a word is selected
   useEffect(() => {
@@ -157,7 +218,7 @@ export default function WordStatsPage() {
         <Tabs defaultValue="lookup" className="w-full">
           <TabsList className="overflow-x-auto">
             <TabsTrigger value="lookup">Wort-Suche</TabsTrigger>
-            <TabsTrigger value="duel" disabled className="opacity-40">
+            <TabsTrigger value="duel" onClick={loadAllRappers}>
               Vokabel-Duell
             </TabsTrigger>
             <TabsTrigger value="dna" disabled className="opacity-40">
@@ -281,12 +342,198 @@ export default function WordStatsPage() {
             ) : null}
           </TabsContent>
 
-          <TabsContent value="duel">
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-muted-foreground text-sm">
-                Vokabel-Duell kommt bald.
-              </p>
+          <TabsContent value="duel" className="mt-6 space-y-4 animate-in fade-in duration-300">
+            {/* Rapper selectors */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <RapperSingleSelect
+                rappers={allRappers}
+                loading={rappersLoading}
+                selected={duelRapperA}
+                onChange={setDuelRapperA}
+                exclude={duelRapperB ?? undefined}
+                placeholder="Rapper A..."
+                className="w-full sm:flex-1"
+              />
+              <Badge
+                variant="outline"
+                className="text-lg font-black px-3 py-1 shrink-0 border-border/40"
+              >
+                VS
+              </Badge>
+              <RapperSingleSelect
+                rappers={allRappers}
+                loading={rappersLoading}
+                selected={duelRapperB}
+                onChange={setDuelRapperB}
+                exclude={duelRapperA ?? undefined}
+                placeholder="Rapper B..."
+                className="w-full sm:flex-1"
+              />
             </div>
+
+            {/* Filters row: POS filter + mode toggle */}
+            {(duelRapperA && duelRapperB && duelRapperA !== duelRapperB) && (
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center sm:justify-between">
+                <Tabs
+                  value={duelPos}
+                  onValueChange={setDuelPos}
+                  className="shrink-0"
+                >
+                  <TabsList className="h-8">
+                    <TabsTrigger value="all" className="text-xs px-3 h-7">
+                      Alle
+                    </TabsTrigger>
+                    <TabsTrigger value="NOUN" className="text-xs px-3 h-7">
+                      Nomen
+                    </TabsTrigger>
+                    <TabsTrigger value="ADJ" className="text-xs px-3 h-7">
+                      Adjektive
+                    </TabsTrigger>
+                    <TabsTrigger value="VERB" className="text-xs px-3 h-7">
+                      Verben
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Tabs
+                  value={duelMode}
+                  onValueChange={(v) => setDuelMode(v as "absolute" | "normalized" | "perBattle")}
+                  className="shrink-0"
+                >
+                  <TabsList className="h-8">
+                    <TabsTrigger value="absolute" className="text-xs px-3 h-7">
+                      Absolut
+                    </TabsTrigger>
+                    <TabsTrigger value="normalized" className="text-xs px-3 h-7">
+                      Pro 1k
+                    </TabsTrigger>
+                    <TabsTrigger value="perBattle" className="text-xs px-3 h-7">
+                      Pro Battle
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
+
+            {/* Same rapper warning */}
+            {duelRapperA && duelRapperB && duelRapperA === duelRapperB && (
+              <p className="text-sm text-muted-foreground text-center">
+                Wähle zwei verschiedene Rapper.
+              </p>
+            )}
+
+            {/* KPI cards */}
+            {isDuelLoading && !duelResult ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 rounded-lg" />
+                ))}
+              </div>
+            ) : duelResult ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <Percent className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {duelResult.jaccard_percent.toFixed(1)}%
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">
+                    Vokabel-Overlap
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <Users className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {duelResult.shared_count.toLocaleString("de-DE")}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">
+                    Gemeinsame Wörter
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <div className="h-4 w-4 mx-auto text-[hsl(217_91%_60%)] mb-1 text-xs font-bold">A</div>
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {duelResult.only_a_count.toLocaleString("de-DE")}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1 truncate">
+                    Nur {duelRapperA}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <div className="h-4 w-4 mx-auto text-primary mb-1 text-xs font-bold">B</div>
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {duelResult.only_b_count.toLocaleString("de-DE")}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1 truncate">
+                    Nur {duelRapperB}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Exclusive words */}
+            {duelResult && (duelResult.top_only_a?.length > 0 || duelResult.top_only_b?.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: duelRapperA!, words: duelResult.top_only_a, color: "hsl(217 91% 60%)" },
+                  { label: duelRapperB!, words: duelResult.top_only_b, color: "hsl(0 84% 60%)" },
+                ].map(({ label, words, color }) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4"
+                  >
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Top-Wörter nur bei{" "}
+                      <span className="font-semibold" style={{ color }}>{label}</span>
+                    </p>
+                    {words.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {words.map((w) => (
+                          <span
+                            key={w.lemma}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/60 px-2.5 py-1 text-sm"
+                          >
+                            <span className="font-semibold">{w.lemma}</span>
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {w.count.toLocaleString("de-DE")}×
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground/60">Keine exklusiven Wörter</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Butterfly chart */}
+            {isDuelLoading && !duelResult ? (
+              <Skeleton className="h-64 sm:h-80 w-full rounded-xl mt-6" />
+            ) : duelResult && duelResult.top_diff.length > 0 ? (
+              <div className={cn("transition-opacity duration-200", isDuelLoading && "opacity-40")}>
+                <VocabDuelChart
+                  data={duelResult.top_diff}
+                  rapperAName={duelRapperA!}
+                  rapperBName={duelRapperB!}
+                  mode={duelMode}
+                  rapperATotalBattles={rapperBattles.get(duelRapperA!)}
+                  rapperBTotalBattles={rapperBattles.get(duelRapperB!)}
+                />
+              </div>
+            ) : duelResult && duelResult.top_diff.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground text-sm">
+                  Keine gemeinsamen Wörter gefunden.
+                </p>
+              </div>
+            ) : !duelRapperA || !duelRapperB ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Swords className="w-16 h-16 text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground text-sm max-w-xs">
+                  Wähle zwei Rapper, um ihre Vokabulare zu vergleichen.
+                </p>
+              </div>
+            ) : null}
           </TabsContent>
 
           <TabsContent value="dna">
