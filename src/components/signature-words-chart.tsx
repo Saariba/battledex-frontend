@@ -38,9 +38,10 @@ function getPosColor(pos: string): string {
 interface SignatureWordsChartProps {
   data: WortschatzDnaSignatureWord[]
   rapperName: string
+  totalRappers?: number
 }
 
-export function SignatureWordsChart({ data, rapperName }: SignatureWordsChartProps) {
+export function SignatureWordsChart({ data, rapperName, totalRappers }: SignatureWordsChartProps) {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
@@ -62,7 +63,7 @@ export function SignatureWordsChart({ data, rapperName }: SignatureWordsChartPro
         count: w.count,
         n_rappers: w.n_rappers,
       }))
-      .reverse() // largest at top
+      // Data arrives sorted by tfidf desc — first item = highest score = top of chart
   }, [data, maxItems])
 
   // Determine which POS tags appear in the data for the legend
@@ -165,10 +166,10 @@ export function SignatureWordsChart({ data, rapperName }: SignatureWordsChartPro
                     {POS_LABELS[d.pos] ?? d.pos}
                   </p>
                   <p className="font-mono text-xs mt-1">
-                    Score: {d.tfidf.toFixed(4)}
+                    Signatur-Score: {d.tfidf.toFixed(4)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {d.count.toLocaleString("de-DE")}× verwendet · {d.n_rappers} Rapper
+                    {d.count.toLocaleString("de-DE")}× verwendet · bei {d.n_rappers}{totalRappers ? ` von ${totalRappers}` : ""} Rappern
                   </p>
                 </div>
               )

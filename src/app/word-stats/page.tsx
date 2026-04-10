@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Search, Hash, Users, Swords, Percent, Fingerprint, BookOpen } from "lucide-react"
+import { Search, Hash, Users, Swords, Percent, Fingerprint, BookOpen, Info } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -581,6 +581,21 @@ export default function WordStatsPage() {
               </Tabs>
             )}
 
+            {/* Explanation */}
+            {dnaRapper && (
+              <div className="flex gap-3 rounded-lg border border-border/30 bg-card/30 backdrop-blur-sm px-4 py-3">
+                <Info className="h-4 w-4 text-muted-foreground/60 shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <span className="font-semibold text-foreground">Signatur-Wörter</span> sind Wörter, die ein Rapper besonders häufig nutzt,
+                  während sie bei anderen selten vorkommen. Der <span className="font-semibold text-foreground">Score</span> (TF-IDF)
+                  kombiniert die Häufigkeit beim Rapper mit der Seltenheit in der Szene — je höher, desto
+                  charakteristischer das Wort.{" "}
+                  <span className="font-semibold text-foreground">Exklusive Wörter</span> kommen in der gesamten
+                  Datenbank nur bei diesem einen Rapper vor.
+                </p>
+              </div>
+            )}
+
             {/* KPI cards */}
             {isDnaLoading && !dnaResult ? (
               <div className="grid grid-cols-3 gap-3">
@@ -630,6 +645,7 @@ export default function WordStatsPage() {
                 <SignatureWordsChart
                   data={dnaResult.signature_words}
                   rapperName={dnaRapper!}
+                  totalRappers={dnaResult.total_rappers}
                 />
                 <div className="rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-4 sm:p-6">
                   <p className="text-xs text-muted-foreground mb-3">
