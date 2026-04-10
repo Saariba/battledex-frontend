@@ -15,6 +15,7 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { VocabDuelWord } from "@/lib/api/word-stats"
 
 type DuelMode = "absolute" | "normalized" | "perBattle"
@@ -23,7 +24,8 @@ interface VocabDuelChartProps {
   data: VocabDuelWord[]
   rapperAName: string
   rapperBName: string
-  mode?: DuelMode
+  mode: DuelMode
+  onModeChange: (mode: DuelMode) => void
   rapperATotalBattles?: number
   rapperBTotalBattles?: number
 }
@@ -32,7 +34,8 @@ export function VocabDuelChart({
   data,
   rapperAName,
   rapperBName,
-  mode = "normalized",
+  mode,
+  onModeChange,
   rapperATotalBattles,
   rapperBTotalBattles,
 }: VocabDuelChartProps) {
@@ -102,9 +105,28 @@ export function VocabDuelChart({
 
   return (
     <div className="mt-6 rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-4 sm:p-6">
-      <p className="text-xs text-muted-foreground text-center mb-4">
-        Gemeinsame Wörter mit dem größten Unterschied in der Nutzung ({modeLabel})
-      </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+        <p className="text-xs text-muted-foreground">
+          Gemeinsame Wörter mit dem größten Unterschied ({modeLabel})
+        </p>
+        <Tabs
+          value={mode}
+          onValueChange={(v) => onModeChange(v as DuelMode)}
+          className="shrink-0"
+        >
+          <TabsList className="h-7">
+            <TabsTrigger value="absolute" className="text-[11px] px-2.5 h-6">
+              Absolut
+            </TabsTrigger>
+            <TabsTrigger value="normalized" className="text-[11px] px-2.5 h-6">
+              Pro 1k
+            </TabsTrigger>
+            <TabsTrigger value="perBattle" className="text-[11px] px-2.5 h-6">
+              Pro Battle
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
       <ChartContainer
         config={chartConfig}
         className="w-full"

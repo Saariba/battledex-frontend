@@ -371,47 +371,28 @@ export default function WordStatsPage() {
               />
             </div>
 
-            {/* Filters row: POS filter + mode toggle */}
+            {/* POS filter */}
             {(duelRapperA && duelRapperB && duelRapperA !== duelRapperB) && (
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center sm:justify-between">
-                <Tabs
-                  value={duelPos}
-                  onValueChange={setDuelPos}
-                  className="shrink-0"
-                >
-                  <TabsList className="h-8">
-                    <TabsTrigger value="all" className="text-xs px-3 h-7">
-                      Alle
-                    </TabsTrigger>
-                    <TabsTrigger value="NOUN" className="text-xs px-3 h-7">
-                      Nomen
-                    </TabsTrigger>
-                    <TabsTrigger value="ADJ" className="text-xs px-3 h-7">
-                      Adjektive
-                    </TabsTrigger>
-                    <TabsTrigger value="VERB" className="text-xs px-3 h-7">
-                      Verben
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <Tabs
-                  value={duelMode}
-                  onValueChange={(v) => setDuelMode(v as "absolute" | "normalized" | "perBattle")}
-                  className="shrink-0"
-                >
-                  <TabsList className="h-8">
-                    <TabsTrigger value="absolute" className="text-xs px-3 h-7">
-                      Absolut
-                    </TabsTrigger>
-                    <TabsTrigger value="normalized" className="text-xs px-3 h-7">
-                      Pro 1k
-                    </TabsTrigger>
-                    <TabsTrigger value="perBattle" className="text-xs px-3 h-7">
-                      Pro Battle
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+              <Tabs
+                value={duelPos}
+                onValueChange={setDuelPos}
+                className="shrink-0"
+              >
+                <TabsList className="h-8">
+                  <TabsTrigger value="all" className="text-xs px-3 h-7">
+                    Alle
+                  </TabsTrigger>
+                  <TabsTrigger value="NOUN" className="text-xs px-3 h-7">
+                    Nomen
+                  </TabsTrigger>
+                  <TabsTrigger value="ADJ" className="text-xs px-3 h-7">
+                    Adjektive
+                  </TabsTrigger>
+                  <TabsTrigger value="VERB" className="text-xs px-3 h-7">
+                    Verben
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             )}
 
             {/* Same rapper warning */}
@@ -516,6 +497,7 @@ export default function WordStatsPage() {
                   rapperAName={duelRapperA!}
                   rapperBName={duelRapperB!}
                   mode={duelMode}
+                  onModeChange={setDuelMode}
                   rapperATotalBattles={rapperBattles.get(duelRapperA!)}
                   rapperBTotalBattles={rapperBattles.get(duelRapperB!)}
                 />
