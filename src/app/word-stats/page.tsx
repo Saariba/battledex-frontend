@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Search, Hash, Users, Swords, Percent } from "lucide-react"
+import { Search, Hash, Users, Swords, Percent, Fingerprint, BookOpen } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { wordStatsService, type WordStat, type WordRapperEntry, type VocabDuelResponse } from "@/lib/api/word-stats"
+import { wordStatsService, type WordStat, type WordRapperEntry, type VocabDuelResponse, type WortschatzDnaResponse } from "@/lib/api/word-stats"
 import { rappersService } from "@/lib/api/rappers"
 import { RapperMultiSelect } from "@/components/rapper-multi-select"
 import { RapperSingleSelect } from "@/components/rapper-single-select"
 import { WordLookupChart, type WordChartEntry } from "@/components/word-lookup-chart"
 import { VocabDuelChart } from "@/components/vocab-duel-chart"
+import { SignatureWordsChart } from "@/components/signature-words-chart"
 
 export default function WordStatsPage() {
   // --- Search state ---
@@ -46,6 +47,12 @@ export default function WordStatsPage() {
   const [isDuelLoading, setIsDuelLoading] = useState(false)
   const [duelMode, setDuelMode] = useState<"absolute" | "normalized" | "perBattle">("normalized")
   const [duelPos, setDuelPos] = useState<string>("all")
+
+  // --- DNA state ---
+  const [dnaRapper, setDnaRapper] = useState<string | null>(null)
+  const [dnaResult, setDnaResult] = useState<WortschatzDnaResponse | null>(null)
+  const [isDnaLoading, setIsDnaLoading] = useState(false)
+  const [dnaPos, setDnaPos] = useState<string>("all")
 
   // Debounce search query
   useEffect(() => {
@@ -140,6 +147,27 @@ export default function WordStatsPage() {
     return () => controller.abort()
   }, [duelRapperA, duelRapperB, duelPos])
 
+  // Fetch DNA data when a rapper is selected
+  useEffect(() => {
+    if (!dnaRapper) {
+      setDnaResult(null)
+      return
+    }
+    const controller = new AbortController()
+    setIsDnaLoading(true)
+    const posFilter = dnaPos === "all" ? undefined : dnaPos
+    wordStatsService
+      .getWortschatzDna(dnaRapper, posFilter, controller.signal)
+      .then(setDnaResult)
+      .catch((err) => {
+        if (err?.message !== "Request was cancelled") {
+          toast.error("Fehler beim Laden der Wortschatz-DNA")
+        }
+      })
+      .finally(() => setIsDnaLoading(false))
+    return () => controller.abort()
+  }, [dnaRapper, dnaPos])
+
   // Fetch per-rapper data when a word is selected
   useEffect(() => {
     if (!selectedWord) return
@@ -221,7 +249,7 @@ export default function WordStatsPage() {
             <TabsTrigger value="duel" onClick={loadAllRappers}>
               Vokabel-Duell
             </TabsTrigger>
-            <TabsTrigger value="dna" disabled className="opacity-40">
+            <TabsTrigger value="dna" onClick={loadAllRappers}>
               Wortschatz-DNA
             </TabsTrigger>
           </TabsList>
@@ -518,12 +546,140 @@ export default function WordStatsPage() {
             ) : null}
           </TabsContent>
 
-          <TabsContent value="dna">
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-muted-foreground text-sm">
-                Wortschatz-DNA kommt bald.
-              </p>
-            </div>
+          <TabsContent value="dna" className="mt-6 space-y-4 animate-in fade-in duration-300">
+            {/* Rapper selector */}
+            <RapperSingleSelect
+              rappers={allRappers}
+              loading={rappersLoading}
+              selected={dnaRapper}
+              onChange={setDnaRapper}
+              placeholder="Rapper wählen..."
+              className="w-full sm:w-72"
+            />
+
+            {/* POS filter */}
+            {dnaRapper && (
+              <Tabs
+                value={dnaPos}
+                onValueChange={setDnaPos}
+                className="shrink-0"
+              >
+                <TabsList className="h-8">
+                  <TabsTrigger value="all" className="text-xs px-3 h-7">
+                    Alle
+                  </TabsTrigger>
+                  <TabsTrigger value="NOUN" className="text-xs px-3 h-7">
+                    Nomen
+                  </TabsTrigger>
+                  <TabsTrigger value="ADJ" className="text-xs px-3 h-7">
+                    Adjektive
+                  </TabsTrigger>
+                  <TabsTrigger value="VERB" className="text-xs px-3 h-7">
+                    Verben
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+
+            {/* KPI cards */}
+            {isDnaLoading && !dnaResult ? (
+              <div className="grid grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 rounded-lg" />
+                ))}
+              </div>
+            ) : dnaResult ? (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <BookOpen className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {dnaResult.rapper.vocab_size.toLocaleString("de-DE")}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">
+                    Vokabular
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <Fingerprint className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {dnaResult.signature_words.length > 0
+                      ? dnaResult.signature_words[0].tfidf.toFixed(4)
+                      : "—"}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">
+                    Top-Score
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
+                  <Hash className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
+                  <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
+                    {dnaResult.total_exclusive_count.toLocaleString("de-DE")}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">
+                    Exklusive Wörter
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Main content: chart + exclusive words */}
+            {isDnaLoading && !dnaResult ? (
+              <Skeleton className="h-64 sm:h-80 w-full rounded-xl" />
+            ) : dnaResult && dnaResult.signature_words.length > 0 ? (
+              <div className={cn("grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4 transition-opacity duration-200", isDnaLoading && "opacity-40")}>
+                <SignatureWordsChart
+                  data={dnaResult.signature_words}
+                  rapperName={dnaRapper!}
+                />
+                <div className="rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-4 sm:p-6">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Exklusive Wörter — nur bei{" "}
+                    <span className="font-semibold text-foreground">{dnaRapper}</span>
+                  </p>
+                  {dnaResult.exclusive_words.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {dnaResult.exclusive_words.map((w) => (
+                          <span
+                            key={w.lemma}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/60 px-2.5 py-1 text-sm"
+                          >
+                            <span className="font-semibold">{w.lemma}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {w.count}×
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {dnaRapper} hat{" "}
+                        <span className="font-semibold text-foreground">
+                          {dnaResult.total_exclusive_count.toLocaleString("de-DE")}
+                        </span>{" "}
+                        exklusive Wörter.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground/60">
+                      Keine exklusiven Wörter gefunden.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : dnaResult && dnaResult.signature_words.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground text-sm">
+                  Keine Signatur-Wörter gefunden.
+                </p>
+              </div>
+            ) : !dnaRapper ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Fingerprint className="w-16 h-16 text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground text-sm max-w-xs">
+                  Wähle einen Rapper, um seine Wortschatz-DNA zu sehen.
+                </p>
+              </div>
+            ) : null}
           </TabsContent>
         </Tabs>
       </div>

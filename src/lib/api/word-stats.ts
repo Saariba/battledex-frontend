@@ -74,6 +74,30 @@ export interface VocabDuelResponse {
   top_only_b: VocabDuelExclusiveWord[]
 }
 
+// --- Wortschatz-DNA types ---
+
+export interface WortschatzDnaSignatureWord {
+  lemma: string
+  pos: string
+  count: number
+  n_rappers: number
+  tfidf: number
+}
+
+export interface WortschatzDnaExclusiveWord {
+  lemma: string
+  pos: string
+  count: number
+}
+
+export interface WortschatzDnaResponse {
+  rapper: { name: string; total_words: number; vocab_size: number }
+  total_rappers: number
+  signature_words: WortschatzDnaSignatureWord[]
+  exclusive_words: WortschatzDnaExclusiveWord[]
+  total_exclusive_count: number
+}
+
 // --- Service ---
 
 export const wordStatsService = {
@@ -126,6 +150,19 @@ export const wordStatsService = {
     if (pos) params.set("pos", pos)
     return apiRequest<VocabDuelResponse>(
       `${config.endpoints.vocabDuel}?${params}`,
+      { signal }
+    )
+  },
+
+  async getWortschatzDna(
+    rapper: string,
+    pos?: string,
+    signal?: AbortSignal
+  ): Promise<WortschatzDnaResponse> {
+    const params = new URLSearchParams({ rapper })
+    if (pos) params.set("pos", pos)
+    return apiRequest<WortschatzDnaResponse>(
+      `${config.endpoints.wortschatzDna}?${params}`,
       { signal }
     )
   },
