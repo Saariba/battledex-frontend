@@ -279,7 +279,7 @@ export default function WordStatsPage() {
               </div>
             ) : wordResults.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {wordResults.slice(0, 3).map((word) => (
+                {wordResults.slice(0, 6).map((word) => (
                   <button
                     key={word.id}
                     onClick={() => selectWord(word)}
