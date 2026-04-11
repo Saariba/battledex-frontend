@@ -84,9 +84,9 @@ export default function WordStatsPage() {
     return () => controller.abort()
   }, [debouncedQuery])
 
-  // Load rapper totals for normalization (once, lazily)
+  // Load rapper totals for normalization (eagerly, once on mount)
   useEffect(() => {
-    if (totalsLoaded.current || (mode === "absolute" && duelMode === "absolute")) return
+    if (totalsLoaded.current) return
     totalsLoaded.current = true
     wordStatsService
       .getRapperTotals()
@@ -100,7 +100,10 @@ export default function WordStatsPage() {
         setRapperTotals(wordMap)
         setRapperBattles(battleMap)
       })
-      .catch(() => {})
+      .catch(() => {
+        // Allow retry on next mode switch
+        totalsLoaded.current = false
+      })
   }, [mode, duelMode])
 
   // Fetch all rapper names (shared across tabs, lazy)
