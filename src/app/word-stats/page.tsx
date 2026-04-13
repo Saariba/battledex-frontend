@@ -624,7 +624,7 @@ export default function WordStatsPage() {
                   <Fingerprint className="h-4 w-4 mx-auto text-muted-foreground/60 mb-1" />
                   <div className="text-2xl sm:text-3xl font-black font-headline tabular-nums">
                     {dnaResult.signature_words.length > 0
-                      ? dnaResult.signature_words[0].tfidf.toFixed(4)
+                      ? Math.round(dnaResult.signature_words[0].tfidf)
                       : "—"}
                   </div>
                   <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1">

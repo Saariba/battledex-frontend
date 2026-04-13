@@ -147,7 +147,7 @@ export function SignatureWordsChart({ data, rapperName, totalRappers }: Signatur
             }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v: number) => v.toFixed(3)}
+            tickFormatter={(v: number) => Math.round(v).toString()}
           />
           <ChartTooltip
             cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
@@ -166,7 +166,7 @@ export function SignatureWordsChart({ data, rapperName, totalRappers }: Signatur
                     {POS_LABELS[d.pos] ?? d.pos}
                   </p>
                   <p className="font-mono text-xs mt-1">
-                    Signatur-Score: {d.tfidf.toFixed(4)}
+                    Signatur-Score: {d.tfidf.toFixed(1)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {d.count.toLocaleString("de-DE")}× verwendet · bei {d.n_rappers}{totalRappers ? ` von ${totalRappers}` : ""} Rappern
