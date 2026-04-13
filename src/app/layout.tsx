@@ -45,6 +45,7 @@ export default function RootLayout({
           <footer className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-5 sm:px-8 border-t border-border/15 text-xs text-muted-foreground/60">
             <span>BattleDex</span>
             <div className="flex gap-4">
+              <Link href="/stats" className="hover:text-foreground transition-colors">Database</Link>
               <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
               <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
               <a href="https://www.reddit.com/user/Saarstriker/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Kontakt</a>

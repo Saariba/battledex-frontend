@@ -250,7 +250,7 @@ export default function WordStatsPage() {
           <TabsList className="overflow-x-auto">
             <TabsTrigger value="lookup">Wort-Suche</TabsTrigger>
             <TabsTrigger value="duel" onClick={loadAllRappers}>
-              Vokabel-Duell
+              Vokabular-Vergleich
             </TabsTrigger>
             <TabsTrigger value="dna" onClick={loadAllRappers}>
               Wortschatz-DNA
