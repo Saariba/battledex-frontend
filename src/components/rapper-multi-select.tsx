@@ -120,7 +120,7 @@ export function RapperMultiSelect({
                 Keine Rapper gefunden
               </p>
             ) : (
-              filtered.slice(0, 50).map((name) => {
+              filtered.map((name) => {
                 const isSelected = selected.includes(name)
                 const isDisabled = !isSelected && selected.length >= max
                 return (

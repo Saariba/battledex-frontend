@@ -88,7 +88,7 @@ export function RapperSingleSelect({
                 Keine Rapper gefunden
               </p>
             ) : (
-              filtered.slice(0, 50).map((name) => {
+              filtered.map((name) => {
                 const isSelected = selected === name
                 const isExcluded = exclude === name
                 return (
