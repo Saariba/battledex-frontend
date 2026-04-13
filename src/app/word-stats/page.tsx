@@ -248,12 +248,17 @@ export default function WordStatsPage() {
         {/* Tabs */}
         <Tabs defaultValue="lookup" className="w-full">
           <TabsList className="overflow-x-auto">
-            <TabsTrigger value="lookup">Wort-Suche</TabsTrigger>
+            <TabsTrigger value="lookup">
+              <span className="sm:hidden">Suche</span>
+              <span className="hidden sm:inline">Wort-Suche</span>
+            </TabsTrigger>
             <TabsTrigger value="duel" onClick={loadAllRappers}>
-              Vokabular-Vergleich
+              <span className="sm:hidden">Vergleich</span>
+              <span className="hidden sm:inline">Vokabular-Vergleich</span>
             </TabsTrigger>
             <TabsTrigger value="dna" onClick={loadAllRappers}>
-              Wortschatz-DNA
+              <span className="sm:hidden">DNA</span>
+              <span className="hidden sm:inline">Wortschatz-DNA</span>
               <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
                 Beta
               </span>
