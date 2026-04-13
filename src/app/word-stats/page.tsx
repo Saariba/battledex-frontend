@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import Link from "next/link"
 import { Search, Hash, Users, Swords, Percent, Fingerprint, BookOpen, Info } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -228,6 +229,8 @@ export default function WordStatsPage() {
   const selectWord = useCallback((word: WordStat) => {
     setSelectedWord(word)
   }, [])
+
+  const rapperHref = (name: string) => `/rappers/${encodeURIComponent(name)}`
 
   const totalUses = selectedWord?.total_count ?? 0
 
@@ -474,7 +477,7 @@ export default function WordStatsPage() {
                     {duelResult.only_a_count.toLocaleString("de-DE")}
                   </div>
                   <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1 truncate">
-                    Nur {duelRapperA}
+                    Nur <Link href={rapperHref(duelRapperA!)} className="hover:text-primary transition-colors">{duelRapperA}</Link>
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm p-4 text-center">
@@ -483,7 +486,7 @@ export default function WordStatsPage() {
                     {duelResult.only_b_count.toLocaleString("de-DE")}
                   </div>
                   <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide font-semibold mt-1 truncate">
-                    Nur {duelRapperB}
+                    Nur <Link href={rapperHref(duelRapperB!)} className="hover:text-primary transition-colors">{duelRapperB}</Link>
                   </div>
                 </div>
               </div>
@@ -502,7 +505,7 @@ export default function WordStatsPage() {
                   >
                     <p className="text-xs text-muted-foreground mb-3">
                       Top-Wörter nur bei{" "}
-                      <span className="font-semibold" style={{ color }}>{label}</span>
+                      <Link href={rapperHref(label)} className="font-semibold hover:underline" style={{ color }}>{label}</Link>
                     </p>
                     {words.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -661,7 +664,7 @@ export default function WordStatsPage() {
                 <div className="rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-4 sm:p-6">
                   <p className="text-xs text-muted-foreground mb-3">
                     Exklusive Wörter — nur bei{" "}
-                    <span className="font-semibold text-foreground">{dnaRapper}</span>
+                    <Link href={rapperHref(dnaRapper!)} className="font-semibold text-foreground hover:text-primary transition-colors">{dnaRapper}</Link>
                   </p>
                   {dnaResult.exclusive_words.length > 0 ? (
                     <>
@@ -679,7 +682,7 @@ export default function WordStatsPage() {
                         ))}
                       </div>
                       <p className="mt-3 text-xs text-muted-foreground">
-                        {dnaRapper} hat{" "}
+                        <Link href={rapperHref(dnaRapper!)} className="hover:text-primary transition-colors">{dnaRapper}</Link> hat{" "}
                         <span className="font-semibold text-foreground">
                           {dnaResult.total_exclusive_count.toLocaleString("de-DE")}
                         </span>{" "}

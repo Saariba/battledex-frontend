@@ -42,6 +42,26 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+function RapperTick({ x, y, payload }: { x: number; y: number; payload: { value: string } }) {
+  const name = payload.value
+  const href = `/rappers/${encodeURIComponent(name)}`
+  return (
+    <a href={href} style={{ cursor: "pointer" }}>
+      <text
+        x={x}
+        y={y}
+        textAnchor="end"
+        fill="hsl(var(--muted-foreground))"
+        fontSize={12}
+        dominantBaseline="central"
+      >
+        <title>{name}</title>
+        {name.length > 16 ? name.slice(0, 15) + "…" : name}
+      </text>
+    </a>
+  )
+}
+
 export function WordLookupChart({ data, mode }: WordLookupChartProps) {
   const dataKey = mode === "perBattle" ? "perBattle" : mode === "normalized" ? "per1k" : "count"
 
@@ -84,7 +104,7 @@ export function WordLookupChart({ data, mode }: WordLookupChartProps) {
             dataKey="rapper_name"
             type="category"
             width={120}
-            tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+            tick={RapperTick}
             tickLine={false}
             axisLine={false}
           />

@@ -14,6 +14,7 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from "@/components/ui/chart"
+import Link from "next/link"
 import type { WortschatzDnaSignatureWord } from "@/lib/api/word-stats"
 
 const POS_COLORS: Record<string, string> = {
@@ -86,7 +87,7 @@ export function SignatureWordsChart({ data, rapperName, totalRappers }: Signatur
   return (
     <div className="rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-4 sm:p-6">
       <p className="text-xs text-muted-foreground mb-2">
-        Top Signatur-Wörter — <span className="font-semibold text-foreground">{rapperName}</span>
+        Top Signatur-Wörter — <Link href={`/rappers/${encodeURIComponent(rapperName)}`} className="font-semibold text-foreground hover:text-primary transition-colors">{rapperName}</Link>
       </p>
 
       {/* POS legend */}
