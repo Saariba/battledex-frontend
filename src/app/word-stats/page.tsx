@@ -237,7 +237,7 @@ export default function WordStatsPage() {
         {/* Header */}
         <header className="space-y-3 pt-6">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight">
-            Wort-<span className="text-primary">Statistiken</span>
+            Wort<span className="text-primary">schatz</span>
           </h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-xl">
             Durchsuche den Wortschatz der deutschen Battlerap-Szene.

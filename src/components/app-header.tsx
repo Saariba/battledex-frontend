@@ -10,7 +10,7 @@ const navItems = [
   { href: "/quiz", label: "Quiz", icon: Brain },
   { href: "/battles", label: "Battles", icon: Swords },
   { href: "/rappers", label: "Rapper", icon: Users },
-  { href: "/word-stats", label: "Wort-Stats", icon: Type },
+  { href: "/word-stats", label: "Wortschatz", icon: Type },
 ]
 
 export function AppHeader() {
