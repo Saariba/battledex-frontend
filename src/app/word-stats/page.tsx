@@ -254,6 +254,9 @@ export default function WordStatsPage() {
             </TabsTrigger>
             <TabsTrigger value="dna" onClick={loadAllRappers}>
               Wortschatz-DNA
+              <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
+                Beta
+              </span>
             </TabsTrigger>
           </TabsList>
 
