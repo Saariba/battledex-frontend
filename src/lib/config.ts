@@ -23,6 +23,11 @@ export const config = {
     analyticsPopular: '/api/v1/analytics/popular',
     nounStats: '/api/v1/noun-stats',
     trendingRappers: '/api/v1/trending-rappers',
+    wordStats: '/api/v1/word-stats',
+    wordStatsTopRappers: '/api/v1/word-stats/top-rappers',
+    rappersTotals: '/api/v1/rappers/totals',
+    vocabDuel: '/api/v1/vocab-duel',
+    wortschatzDna: '/api/v1/wortschatz-dna',
   },
 } as const
 

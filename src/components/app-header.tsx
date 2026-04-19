@@ -3,14 +3,14 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Swords, BarChart3, Users, Brain } from "lucide-react"
+import { Swords, Users, Brain, Type } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/quiz", label: "Quiz", icon: Brain },
   { href: "/battles", label: "Battles", icon: Swords },
   { href: "/rappers", label: "Rapper", icon: Users },
-  { href: "/stats", label: "Statistik", icon: BarChart3 },
+  { href: "/word-stats", label: "Wortschatz", icon: Type },
 ]
 
 export function AppHeader() {
